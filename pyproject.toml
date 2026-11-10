@@ -3,5 +3,6 @@ name = "aiml-inference"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
+    "lm-eval[api]>=0.4.13",
     "ollama>=0.6.3",
 ]
