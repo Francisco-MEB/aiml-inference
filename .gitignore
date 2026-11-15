@@ -1,0 +1,20 @@
+# Model weights / caches
+*.safetensors
+*.gguf
+*.pt
+models/
+.cache/
+hf_cache/
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Local Claude settings and worktrees
+.claude/settings.local.json
+.claude/worktrees/
+
+.env
+.DS_Store
