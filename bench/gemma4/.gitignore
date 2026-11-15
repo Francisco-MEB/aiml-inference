@@ -1,0 +1,4 @@
+.tools/
+.run/
+results/
+__pycache__/
