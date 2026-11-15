@@ -104,6 +104,11 @@ def main():
 
     phases, model_info, quality, skipped = [], [], [], []
 
+    def save_run():
+        common.write_json(run_dir / "run.json", {
+            "run_id": run_id, "phases": phases, "models": model_info, "quality": quality,
+            "models_skipped": skipped, "total_seconds": round(time.time() - t_run0)})
+
     def phase(name, t0):
         phases.append({"phase": name, "start_unix": round(t0, 3), "end_unix": round(time.time(), 3),
                        "seconds": round(time.time() - t0, 1)})
@@ -178,6 +183,7 @@ def main():
                     f2.flush()
                     phase(f"speed:{m['key']}", t0)
                     last = (time.time() - t0, size[m["key"]])
+                    save_run()      # survive an interrupted run
 
         if do_quality:
             qenv = common.server_env(cfg, cfg["quality"].get("server_env"))
@@ -204,10 +210,7 @@ def main():
             common.stop_server(cfg)
         power.send_signal(signal.SIGTERM)
         power.wait(timeout=10)
-        common.write_json(run_dir / "run.json", {"run_id": run_id, "phases": phases,
-                                                 "models": model_info, "quality": quality,
-                                                 "models_skipped": skipped,
-                                                 "total_seconds": round(time.time() - t_run0)})
+        save_run()
     subprocess.run([sys.executable, str(common.BENCH / "harness/make_report.py"), str(run_dir)],
                    check=False)
     print(f"done: {run_dir}")

@@ -228,7 +228,7 @@ def build(run_dir, wall_csv=None):
         rows = [s for s in summary if s["model"] == mk]
         n1 = [s for s in rows if s["concurrency"] == 1]
         peak = max(rows, key=lambda s: s["aggregate_tps_mean"] or 0)
-        longest = max(n1, key=lambda s: s["prompt_tokens_mean"] or 0)
+        longest = max(n1, key=lambda s: s["prompt_tokens_mean"] or 0, default={})
         ps = (info.get(mk, {}).get("ps_after_load") or [{}])[0]
         row = {
             "model": mk, "label": m.get("label"), "architecture": m.get("arch"),
@@ -242,8 +242,8 @@ def build(run_dir, wall_csv=None):
             "context_per_request": ps.get("context_length"),
             "load_plus_warmup_s": info.get(mk, {}).get("load_plus_warmup_s"),
             "single_user_decode_tps": r(common.mean([s["decode_tps_per_req_mean"] for s in n1])),
-            "single_user_prefill_tps": longest["prefill_tps_est_mean"],
-            "single_user_prefill_prompt_tokens": longest["prompt_tokens_mean"],
+            "single_user_prefill_tps": longest.get("prefill_tps_est_mean"),
+            "single_user_prefill_prompt_tokens": longest.get("prompt_tokens_mean"),
             "peak_aggregate_tps": peak["aggregate_tps_mean"],
             "peak_at_users": peak["concurrency"], "peak_prompt_class": peak["prompt_class"],
             "peak_output_tokens_per_hour": peak["output_tokens_per_hour"],

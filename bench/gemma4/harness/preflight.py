@@ -34,8 +34,14 @@ def check(cfg, max_load=2.0, check_load=True):
                         + ", ".join(m.get("name", "?") for m in sysps))
     load1 = os.getloadavg()[0]
     info["loadavg"] = list(os.getloadavg())
-    if check_load and load1 > max_load:
-        problems.append(f"1-min load average {load1:.2f} > {max_load}")
+    # Load average lags by a minute and includes our own previous run, so it only counts when
+    # the CPU is busy right now with something that is not ours.
+    cpu = common.sh("ps -eo user:20,pcpu --no-headers")
+    foreign = sum(float(x.split()[1]) for x in cpu.splitlines() if x.split()[0] != me)
+    info["foreign_cpu_pct_now"] = round(foreign, 1)
+    if check_load and load1 > max_load and foreign > 100:
+        problems.append(f"1-min load average {load1:.2f} > {max_load} with other users' "
+                        f"processes using {foreign:.0f}% CPU")
     info["who"] = common.sh("who").splitlines()
     info["docker_ps"] = common.sh("docker ps --format '{{.Names}} {{.Image}}' 2>&1") \
         or "(no access or none)"
