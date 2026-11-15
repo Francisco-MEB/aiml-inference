@@ -9,7 +9,7 @@ import sys
 import common
 
 
-def check(cfg, max_load=2.0):
+def check(cfg, max_load=2.0, check_load=True):
     me = os.environ.get("USER", "")
     problems, info = [], {}
     apps = common.sh("nvidia-smi --query-compute-apps=pid,process_name,used_memory "
@@ -34,7 +34,7 @@ def check(cfg, max_load=2.0):
                         + ", ".join(m.get("name", "?") for m in sysps))
     load1 = os.getloadavg()[0]
     info["loadavg"] = list(os.getloadavg())
-    if load1 > max_load:
+    if check_load and load1 > max_load:
         problems.append(f"1-min load average {load1:.2f} > {max_load}")
     info["who"] = common.sh("who").splitlines()
     info["docker_ps"] = common.sh("docker ps --format '{{.Names}} {{.Image}}' 2>&1") \

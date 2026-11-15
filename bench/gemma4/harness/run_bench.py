@@ -38,6 +38,10 @@ def main():
     ap.add_argument("--quality-limit", type=int, help="lm-eval --limit")
     ap.add_argument("--skip-speed", action="store_true")
     ap.add_argument("--skip-quality", action="store_true")
+    ap.add_argument("--with-quality", action="store_true",
+                    help="run lm-eval even if quality.enabled is false in the config")
+    ap.add_argument("--time-budget-hours", type=float,
+                    help="stop before a model that would push the run past this many hours")
     ap.add_argument("--skip-pull", action="store_true", help="verify digests but do not pull")
     ap.add_argument("--ignore-preflight", action="store_true",
                     help="run even if pre-flight says STOP (only after agreeing with the others)")
@@ -58,6 +62,12 @@ def main():
     if a.context_length:
         cfg["server"]["env"]["OLLAMA_CONTEXT_LENGTH"] = overrides["OLLAMA_CONTEXT_LENGTH"] = \
             str(a.context_length)
+    if a.time_budget_hours:
+        cfg.setdefault("run", {})["time_budget_hours"] = overrides["time_budget_hours"] = \
+            a.time_budget_hours
+    budget_s = (cfg.get("run", {}).get("time_budget_hours") or 1e9) * 3600
+    do_quality = not a.skip_quality and (cfg["quality"].get("enabled", True) or a.with_quality)
+    t_run0 = time.time()
     if a.quality_limit:
         cfg["quality"]["limit"] = overrides["quality_limit"] = a.quality_limit
     keys = a.models or [m["key"] for m in cfg["models"] if not m.get("optional")]
@@ -92,7 +102,7 @@ def main():
         if not a.ignore_preflight:
             sys.exit(1)
 
-    phases, model_info, quality = [], [], []
+    phases, model_info, quality, skipped = [], [], [], []
 
     def phase(name, t0):
         phases.append({"phase": name, "start_unix": round(t0, 3), "end_unix": round(time.time(), 3),
@@ -144,15 +154,32 @@ def main():
                 w2 = csv.DictWriter(f2, fieldnames=run_speed.XCHECK_FIELDS)
                 w1.writeheader()
                 w2.writeheader()
-                for m in models:
-                    print(f"== speed: {m['tag']}")
+                size = {r["key"]: r.get("size_bytes") or 1 for r in recs}
+                last = None          # (seconds, size) of the previous model
+                for i, m in enumerate(models):
+                    elapsed = time.time() - t_run0
+                    est = last[0] * size[m["key"]] / last[1] * 1.25 if last else 0
+                    stop = ""
+                    if elapsed + est > budget_s:
+                        stop = (f"time budget: {elapsed / 3600:.2f} h used, next model "
+                                f"estimated at {est / 3600:.2f} h")
+                    elif i > 0:
+                        again = preflight.check(cfg, check_load=False)
+                        if not again["ok"] and not a.ignore_preflight:
+                            stop = "another user appeared: " + "; ".join(again["problems"])
+                    if stop:
+                        print(f"STOPPING before {m['tag']}: {stop}")
+                        skipped += [{"key": x["key"], "reason": stop} for x in models[i:]]
+                        break
+                    print(f"== speed: {m['tag']} (elapsed {elapsed / 60:.0f} min)")
                     t0 = time.time()
                     model_info.append(run_speed.run_model(cfg, m, prompts, run_id, w1, w2))
                     f1.flush()
                     f2.flush()
                     phase(f"speed:{m['key']}", t0)
+                    last = (time.time() - t0, size[m["key"]])
 
-        if not a.skip_quality:
+        if do_quality:
             qenv = common.server_env(cfg, cfg["quality"].get("server_env"))
             if "OLLAMA_BENCH_BIN" in env:
                 qenv["OLLAMA_BENCH_BIN"] = env["OLLAMA_BENCH_BIN"]
@@ -178,7 +205,9 @@ def main():
         power.send_signal(signal.SIGTERM)
         power.wait(timeout=10)
         common.write_json(run_dir / "run.json", {"run_id": run_id, "phases": phases,
-                                                 "models": model_info, "quality": quality})
+                                                 "models": model_info, "quality": quality,
+                                                 "models_skipped": skipped,
+                                                 "total_seconds": round(time.time() - t_run0)})
     subprocess.run([sys.executable, str(common.BENCH / "harness/make_report.py"), str(run_dir)],
                    check=False)
     print(f"done: {run_dir}")

@@ -39,10 +39,14 @@ uv sync                                    # lm-eval 0.4.13, openpyxl 3.1.5 (uv.
 uv run python bench/gemma4/harness/run_bench.py --models e4b --levels 1 2 --reps 1 \
     --max-tokens 32 --num-parallel 2 --quality-limit 5
 
-# Full sweep with the pinned config (E4B, 12B, 31B). Add 26b-a4b for the MoE comparison.
-uv run python bench/gemma4/harness/run_bench.py
-uv run python bench/gemma4/harness/run_bench.py --models e4b 12b 31b 26b-a4b
+# Full speed + capacity sweep (E4B, 12B, 31B, then the 26B A4B MoE), capped at 4.5 hours
+uv run python bench/gemma4/harness/run_bench.py --models e4b 12b 31b 26b-a4b --time-budget-hours 4.5
 ```
+
+The pinned config runs speed and capacity only (`quality.enabled` is false). Add
+`--with-quality` to also run lm-eval. Between models the runner repeats the shared-machine
+check and stops if someone else has started using the GPU. If the next model would not fit in
+the time budget it stops cleanly and reports on the models already done.
 
 Results land in `bench/gemma4/results/<UTC time>_<host>_<config hash>/` (not committed).
 
@@ -62,7 +66,7 @@ Everything is in [config/gemma4_ollama_native.json](config/gemma4_ollama_native.
 | Models | `gemma4:e4b-it-qat`, `gemma4:12b-it-qat`, `gemma4:31b-it-qat`, optional `gemma4:26b-a4b-it-qat` (MoE); all Q4_0 QAT |
 | Digests | manifest sha256 and weights-file sha256 per model; the weights file is re-hashed on disk every run |
 | Request | temperature 0, seed 42, `max_tokens` 256, thinking off |
-| Sweep | concurrency 1 2 4 8 16, 3 reps, 3 prompts ([prompts/prompts_v1.jsonl](prompts/prompts_v1.jsonl), sha256 pinned) |
+| Sweep | concurrency 1 2 4 8 16, 5 reps, 3 prompts ([prompts/prompts_v1.jsonl](prompts/prompts_v1.jsonl), sha256 pinned) |
 | User capacity | highest level with p95 TTFT ≤ 2 s and median per-request decode ≥ 10 tok/s, no errors |
 
 The system `ollama.service` on `:11434` is never used or changed. The server's other settings
@@ -76,6 +80,20 @@ reasoning text length, so the spreadsheet shows the switch worked.
 **Google's own files.** The Ollama tags are the same size as Google's official GGUFs
 (`google/gemma-4-*-it-qat-q4_0-gguf`) but not byte-identical. Google's sha256 values are kept in
 the config for reference.
+
+## The spreadsheet
+
+| Sheet | Contents |
+|---|---|
+| Parameters | every setting used, with the not-in-Docker note first |
+| Models | one row per model: size, memory, single-user speed, peak throughput, capacity |
+| Summary | per model, prompt and concurrency: TTFT, decode speed, aggregate speed, power |
+| Capacity | user capacity under three threshold scenarios and four decode statistics |
+| Scaling | throughput and per-user speed against concurrent users, with charts |
+| ServerTimingCheck | client-side speed against Ollama's own timings |
+| Environment, Requests, Power | run metadata and raw rows |
+
+Capacity is the highest tested concurrency that passes with every lower level passing too.
 
 ## What gets measured
 

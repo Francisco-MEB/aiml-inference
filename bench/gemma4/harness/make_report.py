@@ -12,6 +12,13 @@ import pathlib
 
 import common
 
+SCALING_NOTE = ("Limits: one machine, one model loaded at a time, GPU-only power, concurrency "
+                "above the highest tested level not measured. Multiplying by a number of "
+                "machines assumes independent nodes with no shared bottleneck.")
+METRICS = [("aggregate_tps_mean", "Aggregate output tok/s (all users together)"),
+           ("decode_tps_per_req_median", "Per-user decode tok/s (median request)"),
+           ("ttft_p95_s", "p95 time to first token (s)")]
+
 
 def num(v):
     try:
@@ -62,6 +69,36 @@ def r(v, nd=2):
     return round(v, nd) if isinstance(v, float) else v
 
 
+def decode_stat(s, stat):
+    return s[{"median": "decode_tps_per_req_median", "mean": "decode_tps_per_req_mean",
+              "p05": "decode_tps_per_req_p05", "min": "decode_tps_per_req_min"}[stat]]
+
+
+def capacity_for(levels, ttft_max, decode_min, stat):
+    """levels: Summary rows of one model+prompt, sorted by concurrency. Capacity is the highest
+    level that passes with every lower level passing too."""
+    cap, limit, higher_pass = 0, "", False
+    failed = False
+    for s in levels:
+        why = []
+        if s["errors"]:
+            why.append("errors")
+        if s["ttft_p95_s"] is None or s["ttft_p95_s"] > ttft_max:
+            why.append("TTFT")
+        d = decode_stat(s, stat)
+        if d is None or d < decode_min:
+            why.append("decode speed")
+        if not why and not failed:
+            cap = s["concurrency"]
+        elif not why:
+            higher_pass = True
+        elif not failed:
+            failed, limit = True, f"{' and '.join(why)} at {s['concurrency']} users"
+    if not failed:
+        limit = "not reached: passes at the highest level tested"
+    return cap, limit, higher_pass
+
+
 def build(run_dir, wall_csv=None):
     run_dir = pathlib.Path(run_dir)
     env = common.load_json(run_dir / "env.json")
@@ -80,6 +117,8 @@ def build(run_dir, wall_csv=None):
     idle = next((p for p in run["phases"] if p["phase"] == "idle_baseline"), None)
     idle_w = gpu.mean(idle["start_unix"], idle["end_unix"]) if idle else None
     thr = cfg["thresholds"]
+    order = [m["key"] for m in cfg["models"]]
+    prompt_order = list(dict.fromkeys(q["prompt_class"] for q in reqs))
 
     # ---- Summary -------------------------------------------------------------------------
     groups = {}
@@ -91,56 +130,141 @@ def build(run_dir, wall_csv=None):
         for q in rows:
             batches[q["rep"]] = (num(q["batch_start_unix"]), num(q["batch_end_unix"]),
                                  num(q["batch_agg_tps"]))
+        aggs = [b[2] for b in batches.values() if b[2] is not None]
         toks = sum(int(num(q["output_tokens"]) or 0) for q in rows)
         wall_s = sum(b[1] - b[0] for b in batches.values())
         e_gpu = sum(gpu.energy(b[0], b[1]) or 0 for b in batches.values()) if gpu.t else None
         e_wall = sum(wall.energy(b[0], b[1]) or 0 for b in batches.values()) if wall.t else None
         ttft = [num(q["ttft_s"]) for q in rows]
         dec = [num(q["decode_tps"]) for q in rows]
-        errs = sum(1 for q in rows if q["error"])
-        p95 = common.percentile(ttft, 95)
-        dstat = common.percentile(dec, 50) if thr["decode_stat"] == "median" else common.mean(dec)
-        ok = (errs == 0 and p95 is not None and dstat is not None
-              and p95 <= thr["p95_ttft_s_max"] and dstat >= thr["decode_tps_min"])
+        decv = [d for d in dec if d is not None]
         summary.append({
             "model": mk, "prompt_class": pc, "concurrency": n, "n_requests": len(rows),
-            "errors": errs,
+            "n_batches": len(batches), "errors": sum(1 for q in rows if q["error"]),
             "prompt_tokens_mean": r(common.mean([num(q["prompt_tokens"]) for q in rows]), 0),
             "output_tokens_mean": r(common.mean([num(q["output_tokens"]) for q in rows]), 1),
-            "ttft_mean_s": r(common.mean(ttft), 3), "ttft_p95_s": r(p95, 3),
+            "ttft_mean_s": r(common.mean(ttft), 3), "ttft_p50_s": r(common.percentile(ttft, 50), 3),
+            "ttft_p95_s": r(common.percentile(ttft, 95), 3),
+            "ttft_max_s": r(max([t for t in ttft if t is not None], default=None), 3),
+            "e2e_mean_s": r(common.mean([num(q["e2e_s"]) for q in rows]), 2),
             "decode_tps_per_req_mean": r(common.mean(dec)),
             "decode_tps_per_req_median": r(common.percentile(dec, 50)),
-            "decode_tps_per_req_min": r(min([d for d in dec if d is not None], default=None)),
+            "decode_tps_per_req_p05": r(common.percentile(dec, 5)),
+            "decode_tps_per_req_min": r(min(decv, default=None)),
             "prefill_tps_est_mean": r(common.mean([num(q["prefill_tps_est"]) for q in rows])),
             "prefill_note": "valid (no queueing)" if n == 1 else "includes queueing; use N=1",
-            "aggregate_tps_mean": r(common.mean([b[2] for b in batches.values()])),
+            "aggregate_tps_mean": r(common.mean(aggs)),
+            "aggregate_tps_min": r(min(aggs, default=None)),
+            "aggregate_tps_max": r(max(aggs, default=None)),
+            "scaling_efficiency": None,
+            "output_tokens_per_hour": None,
             "gpu_power_avg_w": r(e_gpu / wall_s) if e_gpu and wall_s else None,
             "gpu_joules_per_output_token": r(e_gpu / toks, 3) if e_gpu and toks else None,
             "wall_power_avg_w": r(e_wall / wall_s) if e_wall and wall_s else None,
             "wall_joules_per_output_token": r(e_wall / toks, 3) if e_wall and toks else None,
             "reasoning_chars": sum(int(num(q["reasoning_chars"]) or 0) for q in rows),
-            "meets_thresholds": "yes" if ok else "no",
         })
-    summary.sort(key=lambda s: (s["model"], s["prompt_class"], s["concurrency"]))
+    summary.sort(key=lambda s: (order.index(s["model"]) if s["model"] in order else 99,
+                                prompt_order.index(s["prompt_class"]), s["concurrency"]))
+    base = {(s["model"], s["prompt_class"]): s["aggregate_tps_mean"]
+            for s in summary if s["concurrency"] == 1}
+    for s in summary:
+        b = base.get((s["model"], s["prompt_class"]))
+        if b and s["aggregate_tps_mean"]:
+            # 1.0 = N users each get what a single user gets
+            s["scaling_efficiency"] = r(s["aggregate_tps_mean"] / (s["concurrency"] * b), 3)
+            s["output_tokens_per_hour"] = round(s["aggregate_tps_mean"] * 3600)
+    models_run = list(dict.fromkeys(s["model"] for s in summary))
 
-    # ---- Capacity ------------------------------------------------------------------------
+    def levels_of(mk, pc):
+        return [s for s in summary if s["model"] == mk and s["prompt_class"] == pc]
+
+    # ---- Capacity (long) + pivot ---------------------------------------------------------
+    scenarios = thr.get("scenarios") or [{"name": "pinned", "p95_ttft_s_max": thr["p95_ttft_s_max"],
+                                          "decode_tps_min": thr["decode_tps_min"]}]
+    stats = thr.get("decode_stats") or [thr["decode_stat"]]
     capacity = []
-    for mk, pc in sorted({(s["model"], s["prompt_class"]) for s in summary}):
-        lv = [s for s in summary if s["model"] == mk and s["prompt_class"] == pc]
-        passing = [s["concurrency"] for s in lv if s["meets_thresholds"] == "yes"]
-        tested = [s["concurrency"] for s in lv]
-        cap = max(passing) if passing else 0
-        note = ""
-        if passing and cap == max(tested):
-            note = "passes at the highest level tested; true capacity may be higher"
-        if any(c < cap and c not in passing for c in tested):
-            note = "a lower level failed while a higher one passed; check the raw rows"
-        capacity.append({"model": mk, "prompt_class": pc, "user_capacity": cap,
-                         "levels_tested": " ".join(map(str, tested)),
-                         "levels_passing": " ".join(map(str, passing)),
-                         "rule": f"p95 TTFT <= {thr['p95_ttft_s_max']} s and "
-                                 f"{thr['decode_stat']} per-request decode >= "
-                                 f"{thr['decode_tps_min']} tok/s, 0 errors", "note": note})
+    for mk in models_run:
+        for pc in prompt_order:
+            lv = levels_of(mk, pc)
+            if not lv:
+                continue
+            for sc in scenarios:
+                for st in stats:
+                    cap, limit, higher = capacity_for(lv, sc["p95_ttft_s_max"],
+                                                      sc["decode_tps_min"], st)
+                    capacity.append({
+                        "model": mk, "prompt_class": pc, "scenario": sc["name"],
+                        "p95_ttft_s_max": sc["p95_ttft_s_max"],
+                        "decode_tps_min": sc["decode_tps_min"], "decode_statistic": st,
+                        "user_capacity": cap, "limited_by": limit,
+                        "levels_tested": " ".join(str(s["concurrency"]) for s in lv),
+                        "note": "a higher level passed after a lower one failed" if higher else ""})
+    pinned = scenarios[0]["name"]
+    title = (f"User capacity per machine: {pinned}, p95 TTFT <= {scenarios[0]['p95_ttft_s_max']} "
+             f"s and {thr['decode_stat']} per-user decode >= {scenarios[0]['decode_tps_min']} "
+             f"tok/s. Levels tested: {' '.join(map(str, cfg['sweep']['concurrency_levels']))}.")
+    pivot = [[title], ["model", *prompt_order]]
+    for mk in models_run:
+        row = [mk]
+        for pc in prompt_order:
+            c = next((c for c in capacity if c["model"] == mk and c["prompt_class"] == pc
+                      and c["scenario"] == pinned and c["decode_statistic"] == thr["decode_stat"]),
+                     None)
+            top = c and c["limited_by"].startswith("not reached")
+            row.append("" if c is None else (f">={c['user_capacity']}" if top
+                                             else c["user_capacity"]))
+        pivot.append(row)
+    pivot += [[], ["All scenarios and statistics (long format):"]]
+
+    # ---- Models --------------------------------------------------------------------------
+    info = {m["key"]: m for m in run.get("models", [])}
+    pulled = {m["key"]: m for m in env["models"]}
+    models_sheet = []
+    for m in cfg["models"]:
+        mk = m["key"]
+        if mk not in models_run:
+            continue
+        rows = [s for s in summary if s["model"] == mk]
+        n1 = [s for s in rows if s["concurrency"] == 1]
+        peak = max(rows, key=lambda s: s["aggregate_tps_mean"] or 0)
+        longest = max(n1, key=lambda s: s["prompt_tokens_mean"] or 0)
+        ps = (info.get(mk, {}).get("ps_after_load") or [{}])[0]
+        row = {
+            "model": mk, "label": m.get("label"), "architecture": m.get("arch"),
+            "params_billion": m.get("params_b"),
+            "active_params_billion": m.get("active_params_b", m.get("params_b")),
+            "tag": m["tag"], "quantization": cfg["quantization"],
+            "download_size_gb": r((pulled.get(mk, {}).get("size_bytes") or 0) / 1e9),
+            "memory_loaded_gb": r((ps.get("size") or 0) / 1e9),
+            "on_gpu_pct": r(100 * (ps.get("size_vram") or 0) / ps["size"], 0)
+            if ps.get("size") else None,
+            "context_per_request": ps.get("context_length"),
+            "load_plus_warmup_s": info.get(mk, {}).get("load_plus_warmup_s"),
+            "single_user_decode_tps": r(common.mean([s["decode_tps_per_req_mean"] for s in n1])),
+            "single_user_prefill_tps": longest["prefill_tps_est_mean"],
+            "single_user_prefill_prompt_tokens": longest["prompt_tokens_mean"],
+            "peak_aggregate_tps": peak["aggregate_tps_mean"],
+            "peak_at_users": peak["concurrency"], "peak_prompt_class": peak["prompt_class"],
+            "peak_output_tokens_per_hour": peak["output_tokens_per_hour"],
+            "gpu_power_at_peak_w": peak["gpu_power_avg_w"],
+            "gpu_joules_per_token_at_peak": peak["gpu_joules_per_output_token"],
+        }
+        for pc in prompt_order:
+            row[f"capacity_{pc}"] = next((p[1 + prompt_order.index(pc)] for p in pivot[2:]
+                                          if p and p[0] == mk), "")
+        models_sheet.append(row)
+
+    # ---- Scaling (blocks: one per prompt class and metric; rows = users, cols = models) ---
+    scaling = []
+    for pc in prompt_order:
+        for key, title in METRICS:
+            for n in sorted({s["concurrency"] for s in summary if s["prompt_class"] == pc}):
+                row = {"prompt_class": pc, "metric": title, "concurrent_users": n}
+                for mk in models_run:
+                    row[mk] = next((s[key] for s in levels_of(mk, pc) if s["concurrency"] == n),
+                                   None)
+                scaling.append(row)
 
     # ---- Parameters ----------------------------------------------------------------------
     srv = env["server"]
@@ -154,12 +278,17 @@ def build(run_dir, wall_csv=None):
             "Same Ollama version as the pinned image; see the Server rows for exact values")
     add("Run", "run_id", env["run_id"])
     add("Run", "timestamp_utc", env["timestamp_utc"])
+    add("Run", "total run time (min)", r(run.get("total_seconds", 0) / 60, 1))
     add("Run", "git_commit", env["git_commit"], f"branch {env['git_branch']}, "
         f"uncommitted changes: {env['git_dirty']}")
     add("Run", "config file", env["config_path"])
     add("Run", "config_sha256", env["config_sha256"], "hash of the pinned config before overrides")
     add("Run", "command-line overrides", str(env["cli_overrides"] or "none"),
         "anything listed here differs from the pinned config")
+    add("Run", "models run", " ".join(models_run))
+    for s in run.get("models_skipped", []):
+        add("Run", f"model NOT run: {s['key']}", s["reason"])
+    add("Run", "other GPU processes at start", str(env["other_gpu_processes_at_start"] or "none"))
     add("Server", "backend type", cfg["backend"]["type"])
     add("Server", "base_url (OpenAI-compatible)", cfg["backend"]["base_url"])
     add("Server", "mode", srv.get("mode"))
@@ -175,13 +304,22 @@ def build(run_dir, wall_csv=None):
     for k, v in cfg["request"].items():
         add("Request", k, str(v))
     add("Sweep", "concurrency_levels", " ".join(map(str, cfg["sweep"]["concurrency_levels"])))
-    add("Sweep", "reps", cfg["sweep"]["reps"])
+    add("Sweep", "reps", cfg["sweep"]["reps"], "batches per level; a batch is N simultaneous requests")
     add("Sweep", "warmup_max_tokens", cfg["sweep"]["warmup_max_tokens"], "warm-up is discarded")
+    add("Sweep", "warmup_all_slots", str(cfg["sweep"].get("warmup_all_slots")),
+        "one discarded batch at the highest level")
     add("Sweep", "order", "per model: load, warm-up, each prompt x each level x reps, unload")
     add("Prompts", "file", cfg["prompts"]["path"])
     add("Prompts", "sha256", cfg["prompts"]["sha256"])
-    for k, v in thr.items():
-        add("Thresholds", k, v)
+    add("Thresholds", "pinned rule", f"p95 TTFT <= {thr['p95_ttft_s_max']} s and "
+        f"{thr['decode_stat']} per-request decode >= {thr['decode_tps_min']} tok/s, 0 errors")
+    for sc in scenarios:
+        add("Thresholds", f"scenario: {sc['name']}",
+            f"p95 TTFT <= {sc['p95_ttft_s_max']} s, decode >= {sc['decode_tps_min']} tok/s")
+    add("Thresholds", "decode statistics reported", ", ".join(stats),
+        "p05 = the slowest 5% of requests are below this")
+    add("Thresholds", "capacity definition",
+        "highest tested level that passes, with every lower level passing too")
     add("Quantization", "all models", cfg["quantization"])
     for m in env["models"]:
         add("Model", m["tag"], "manifest sha256:" + str(m.get("ollama_digest", "")),
@@ -194,7 +332,6 @@ def build(run_dir, wall_csv=None):
             add("Model", m["tag"] + " loaded", f"size {ps['size']} bytes, on GPU "
                 f"{ps['size_vram']} bytes, context {ps['context_length']}",
                 f"load + warm-up {m.get('load_plus_warmup_s')} s")
-    for m in run.get("models", []):
         for name, v in (m.get("thinking_check") or {}).items():
             add("Thinking check", f"{m['tag']}: {name}",
                 f"reasoning chars {v['reasoning_chars']}, answer chars {v['content_chars']}"
@@ -206,13 +343,16 @@ def build(run_dir, wall_csv=None):
     add("Power", "wall meter", "merged" if wall.t else "not provided",
         "wall_meter_w column is empty until --wall-csv is given")
     q = cfg["quality"]
-    add("Quality", "tasks", ", ".join(q["tasks"]))
-    add("Quality", "limit per task", q.get("limit") or "none (full)")
-    add("Quality", "gen_kwargs", q["gen_kwargs"])
-    add("Quality", "server env for quality phase", str(q.get("server_env")),
-        "server is restarted with these before lm-eval")
-    add("Quality", "lm-eval version", common.sh(
-        f"{common.REPO}/.venv/bin/python -c 'import lm_eval; print(lm_eval.__version__)'"))
+    if run.get("quality"):
+        add("Quality", "tasks", ", ".join(q["tasks"]))
+        add("Quality", "limit per task", q.get("limit") or "none (full)")
+        add("Quality", "gen_kwargs", q["gen_kwargs"])
+        add("Quality", "server env for quality phase", str(q.get("server_env")),
+            "server is restarted with these before lm-eval")
+        add("Quality", "lm-eval version", common.sh(
+            f"{common.REPO}/.venv/bin/python -c 'import lm_eval; print(lm_eval.__version__)'"))
+    else:
+        add("Quality", "output-quality evaluation", "not run", "speed and capacity only")
 
     # ---- Quality / Environment / cross-check -----------------------------------------------
     quality = []
@@ -245,10 +385,14 @@ def build(run_dir, wall_csv=None):
         for k in list(x):
             if k.endswith(("_tps", "_mean", "_s")):
                 x[k] = r(num(x[k]))
+        c, n = num(x.get("client_decode_tps_n1_mean")), num(x.get("native_decode_tps"))
+        x["client_vs_server_decode_pct"] = r(100 * (c - n) / n, 1) if c and n else None
 
-    sheets = [("Parameters", P), ("Summary", summary), ("Capacity", capacity),
-              ("Quality", quality), ("Environment", environment),
-              ("ServerTimingCheck", xcheck), ("Requests", reqs), ("Power", power)]
+    sheets = [("Parameters", P), ("Models", models_sheet), ("Summary", summary),
+              ("Capacity", capacity), ("Scaling", scaling), ("Quality", quality),
+              ("ServerTimingCheck", xcheck), ("Environment", environment),
+              ("Requests", reqs), ("Power", power)]
+    sheets = [(n, rows) for n, rows in sheets if rows or n != "Quality"]
     out = run_dir / "report"
     out.mkdir(exist_ok=True)
     for name, rows in sheets:
@@ -257,12 +401,27 @@ def build(run_dir, wall_csv=None):
                 w = csv.DictWriter(f, fieldnames=list(rows[0]))
                 w.writeheader()
                 w.writerows(rows)
+    with open(out / "CapacityPivot.csv", "w", newline="") as f:
+        csv.writer(f).writerows(pivot[1:2 + len(models_run)])
     try:
         import openpyxl
+        from openpyxl.chart import LineChart, Reference
         from openpyxl.styles import Alignment, Font, PatternFill
     except ImportError:
         print("openpyxl not installed: wrote CSVs only. Run with `uv run` to get findings.xlsx")
         return
+    bold, grey = Font(bold=True), PatternFill("solid", fgColor="DDDDDD")
+
+    def header(ws, row):
+        for c in ws[row]:
+            c.font, c.fill = bold, grey
+
+    def widths(ws, cols, rows):
+        for i, c in enumerate(cols):
+            width = max([len(str(c))] + [len(str(row[c])) for row in rows[:200]])
+            ws.column_dimensions[openpyxl.utils.get_column_letter(i + 1)].width = \
+                min(max(10, width + 2), 70)
+
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
     for name, rows in sheets:
@@ -271,25 +430,60 @@ def build(run_dir, wall_csv=None):
             ws.append(["(no data in this run)"])
             continue
         cols = list(rows[0])
+        if name == "Scaling":
+            ws.append([SCALING_NOTE])
+            ws["A1"].font = bold
+            ws.append([])
+            anchor_row = 3
+            for pc in prompt_order:
+                for _key, title in METRICS:
+                    block = [x for x in rows if x["prompt_class"] == pc and x["metric"] == title]
+                    ws.append([f"{title}: {pc}"])
+                    ws.cell(ws.max_row, 1).font = bold
+                    ws.append(["concurrent users", *models_run])
+                    hdr = ws.max_row
+                    header(ws, hdr)
+                    for x in block:
+                        ws.append([x["concurrent_users"], *[x[m] for m in models_run]])
+                    last = ws.max_row
+                    ws.append([])
+                    ch = LineChart()
+                    ch.title = f"{title}: {pc}"
+                    ch.x_axis.title, ch.y_axis.title = "Concurrent users", title.split(" (")[0]
+                    ch.x_axis.delete = ch.y_axis.delete = False
+                    ch.height, ch.width = 7.5, 15
+                    ch.add_data(Reference(ws, min_col=2, max_col=1 + len(models_run),
+                                          min_row=hdr, max_row=last), titles_from_data=True)
+                    ch.set_categories(Reference(ws, min_col=1, min_row=hdr + 1, max_row=last))
+                    for s in ch.series:
+                        s.marker.symbol = "circle"
+                    col = "H" if title == METRICS[0][1] else ("R" if title == METRICS[1][1]
+                                                              else "AB")
+                    ws.add_chart(ch, f"{col}{anchor_row}")
+                anchor_row += 16
+            ws.column_dimensions["A"].width = 18
+            continue
+        if name == "Capacity":
+            for prow in pivot:
+                ws.append(prow)
+            ws["A1"].font = bold
+            header(ws, 2)
+            ws.cell(ws.max_row, 1).font = bold
         ws.append(cols)
-        for c in ws[1]:
-            c.font = Font(bold=True)
-            c.fill = PatternFill("solid", fgColor="DDDDDD")
+        hdr = ws.max_row
+        header(ws, hdr)
         for row in rows:
             ws.append([num(row[c]) if name in ("Requests", "Power") and num(row[c]) is not None
                        else row[c] for c in cols])
-        ws.freeze_panes = "A2"
-        for i, c in enumerate(cols):
-            width = max([len(str(c))] + [len(str(row[c])) for row in rows[:200]])
-            ws.column_dimensions[openpyxl.utils.get_column_letter(i + 1)].width = \
-                min(max(10, width + 2), 70)
+        ws.freeze_panes = ws.cell(hdr + 1, 1) if name != "Capacity" else None
+        widths(ws, cols, rows)
         if name == "Parameters":
             for row in ws.iter_rows(min_row=2):
                 for c in row:
                     c.alignment = Alignment(wrap_text=True, vertical="top")
                 if row[0].value == "DEVIATION":
                     for c in row:
-                        c.font = Font(bold=True)
+                        c.font = bold
                         c.fill = PatternFill("solid", fgColor="FFE699")
     wb.save(run_dir / "findings.xlsx")
     print(f"wrote {run_dir / 'findings.xlsx'} and {out}/*.csv")
