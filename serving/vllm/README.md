@@ -33,6 +33,7 @@ Everything is set by environment variable. Extra arguments are passed straight t
 | Variable | Default | Meaning |
 |---|---|---|
 | `MODEL` | `Qwen/Qwen3.5-35B-A3B-FP8` | Hugging Face model ID or local path |
+| `REVISION` | `9d1823d2…` for the default model, otherwise latest | Hugging Face revision (commit SHA, branch or tag). The default model is pinned to the weights we tested |
 | `NAME` | `chat` | Model name clients send in requests (`chat.py` and `ndcode` expect `chat`) |
 | `HOST` / `PORT` | `127.0.0.1` / `8000` | Bind address. Use `HOST=0.0.0.0` to expose it to other machines |
 | `GPU_UTIL` | `0.50` | Fraction of **total** memory vLLM reserves (weights + KV cache), ~60 GB |

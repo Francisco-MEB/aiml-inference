@@ -105,6 +105,14 @@ GPU KV cache size: 385,272 tokens, Maximum concurrency for 32,768 tokens per req
 
 The **KV cache** holds the "working memory" of every active conversation. 385k tokens means ~11 users could each have a full 32k-token conversation at the same time. Raising `GPU_UTIL` grows the KV cache, not the model.
 
+For the current **35B-A3B** default (`GPU_UTIL=0.50`, `MAX_LEN=131072`), vLLM's `/metrics` (`vllm:cache_config_info`) reports **1,097 KV blocks** and a **max concurrency of ~8.4 full 128k-token sessions**, i.e. roughly 1.1M tokens of KV cache. That's far more room per GB than the 9B, because Qwen3.5 is a *hybrid* model: only 1 in 4 layers uses full attention (which needs a KV cache), and the rest use linear attention with a small fixed-size state. You can check these numbers on a running server any time:
+
+```sh
+curl -s 127.0.0.1:8000/metrics | grep -E "cache_config_info|kv_cache_usage_perc|prefix_cache_(hits|queries)_total"
+```
+
+`prefix_cache_hits / prefix_cache_queries` is the share of prompt tokens vLLM reused instead of recomputing. Coding agents resend the same long system prompt and file context every turn, so this runs high (~90% during our coding eval).
+
 ## 3. Chat with it
 
 In a second tmux pane (`Ctrl-b %`):

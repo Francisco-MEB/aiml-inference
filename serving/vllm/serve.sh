@@ -11,7 +11,14 @@
 # 0.9 on a node other people are using: it will starve or crash their jobs.
 set -euo pipefail
 
-MODEL="${MODEL:-Qwen/Qwen3.5-35B-A3B-FP8}"  # ~36 GB, MoE with ~3B active params/token
+DEFAULT_MODEL="Qwen/Qwen3.5-35B-A3B-FP8"   # ~36 GB, MoE with ~3B active params/token
+DEFAULT_REVISION="9d1823d2dee688a6b25e77009dc727688c44936e"  # the exact weights we tested (2026-11-16)
+MODEL="${MODEL:-$DEFAULT_MODEL}"
+# Pin the default model to its tested revision so results stay reproducible if the
+# upstream repo changes. Other models use their latest revision unless REVISION is set.
+if [[ -z "${REVISION+set}" ]]; then
+  if [[ "$MODEL" == "$DEFAULT_MODEL" ]]; then REVISION="$DEFAULT_REVISION"; else REVISION=""; fi
+fi
 NAME="${NAME:-chat}"                        # the model name clients (chat.py, ndcode) ask for
 HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-8000}"
@@ -33,9 +40,10 @@ args=(
   --max-model-len "$MAX_LEN"
   --generation-config auto
 )
+if [[ -n "$REVISION" ]]; then args+=(--revision "$REVISION"); fi
 if [[ -n "$REASONING_PARSER" ]]; then args+=(--reasoning-parser "$REASONING_PARSER"); fi
 if [[ -n "$TOOL_PARSER" ]]; then args+=(--enable-auto-tool-choice --tool-call-parser "$TOOL_PARSER"); fi
 if [[ "$TEXT_ONLY" == 1 ]]; then args+=(--language-model-only); fi
 
-echo "Serving $MODEL as '$NAME' on http://$HOST:$PORT/v1 (gpu-memory-utilization=$GPU_UTIL, max-model-len=$MAX_LEN, tools=${TOOL_PARSER:-off})" >&2
+echo "Serving $MODEL${REVISION:+@${REVISION:0:8}} as '$NAME' on http://$HOST:$PORT/v1 (gpu-memory-utilization=$GPU_UTIL, max-model-len=$MAX_LEN, tools=${TOOL_PARSER:-off})" >&2
 exec uv run vllm serve "$MODEL" "${args[@]}" "$@"

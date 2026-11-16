@@ -5,8 +5,8 @@ Notre Dame CRC is funding $50k of hardware for two competing on-prem LLM inferen
 
 ## Environment
 - Nodes: Dell Pro GB10 (Grace ARM64 CPU + Blackwell GPU, ~128 GB unified memory). Assume **aarch64**: check that wheels and containers have arm64/sbsa builds.
-- Python ≥ 3.12 managed with **uv** (`uv run <script>`). Dependencies: `ollama`, `lm-eval[api]`.
-- Current serving engine: Ollama, using `q4_K_M` quants for now (see `architecture/week2.md`).
+- Python ≥ 3.12 managed with **uv** (`uv run <script>`). Root env deps: `ollama`, `lm-eval[api]`. vLLM has its own env (see Layout).
+- Serving engines: **vLLM 0.33** is the campus server (`serving/vllm/serve.sh`: Qwen3.5-35B-A3B-FP8 pinned to a tested revision, tool calling, 128k context). The architecture group's per-node evals use Ollama with `q4_K_M` quants (see `architecture/week2.md`).
 
 ## Layout
 - `architecture/`: per-node evals. Copy `base_eval.py` to add an eval (a function taking `model` and returning a metrics dict, added to `EVALS`).
@@ -18,7 +18,7 @@ Notre Dame CRC is funding $50k of hardware for two competing on-prem LLM inferen
 - `examples/`: minimal Ollama / lm-eval usage.
 
 ## Conventions
-- Git: architecture work branches off the `architecture` branch (see `architecture/week2.md`), and PRs merge into `main`.
+- Git: serving / ndcode / eval work goes to the **`dev`** integration branch. Architecture work branches off the `architecture` branch (see `architecture/week2.md`). PRs merge into `main`.
 - Benchmark both clusters with the same workloads, models, and quantization wherever the hardware allows. Document every deviation.
 - Make results reproducible: record the model tag, quantization, engine and version, node, and concurrency alongside the numbers.
 - GB10 nodes are **shared** and the memory is unified: always pass an explicit, modest `--gpu-memory-utilization` to vLLM (never its 0.9 default), check `nvidia-smi` / `free -g` first, and stop servers when done. Results measured alongside someone else's job aren't benchmarks.
