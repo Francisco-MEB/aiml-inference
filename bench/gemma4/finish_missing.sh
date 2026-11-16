@@ -7,7 +7,8 @@
 #
 # Order: 26B-A4B speed (slots = users), 12B speed (slots = users), missing quality runs.
 # Settings (environment variables, all optional):
-#   FREE_MIN=10       minutes the GPU must be free of other users before a step starts
+#   FREE_MIN=10       minutes the GPU must be free of other users before the first step
+#                     (later steps only need the pre-flight check to pass)
 #   MAX_WAIT_MIN=240  give up if it has not been free for that long
 #   CAP_MIN=150       no new step starts after this many minutes of running
 set -u
@@ -22,7 +23,7 @@ wait_free() {             # returns 1 if the GPU never stayed free long enough
   while true; do
     if $PY bench/gemma4/harness/preflight.py > /dev/null 2>&1; then
       since=${since:-$(date +%s)}
-      (( $(date +%s) - since >= FREE_MIN * 60 )) && return 0
+      (( $(date +%s) - since >= FREE_MIN * 60 )) && { FREE_MIN=0; return 0; }   # full wait only once
     else
       [[ -n "$since" ]] && log "someone started using the machine; waiting again"
       since=""
