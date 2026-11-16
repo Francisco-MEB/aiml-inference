@@ -9,12 +9,11 @@ into results/combined_gemma4_gb10, then build findings.xlsx.
 
 slots=users runs: one level per run, OLLAMA_NUM_PARALLEL equal to that level.
 slots=16 runs: the first full sweep (16 fixed slots), kept for comparison."""
-import json
 import pathlib
 import subprocess
+import sys
 
 import common
-import sys
 
 BENCH = pathlib.Path(__file__).resolve().parents[1]
 R = BENCH / "results"
