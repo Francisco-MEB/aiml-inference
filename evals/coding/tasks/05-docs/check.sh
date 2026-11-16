@@ -4,6 +4,8 @@ set -euo pipefail
 python3 - <<'EOF'
 import re, sys
 text = open("harness/README.md").read()
+# Drop fenced code blocks so a shell comment like "# foo" isn't mistaken for a heading.
+text = re.sub(r"^```.*?^```[^\n]*$", "", text, flags=re.M | re.S)
 m = re.search(r"^#+\s*Troubleshoot\w*.*$", text, re.M | re.I)
 assert m, "no Troubleshooting heading"
 section = text[m.end():]
