@@ -1,0 +1,15 @@
+[project]
+name = "aiml-inference-vllm"
+version = "0.1.0"
+description = "Isolated environment for running vLLM servers (kept separate from the root lm-eval env)."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "vllm==0.33.0",
+]
+
+[tool.uv]
+package = false
+# Use a uv-managed CPython: it ships Python.h, which Triton needs to JIT-compile
+# its CUDA helper at startup. The system python3.12 lacks headers unless
+# python3.12-dev is installed (needs sudo).
+python-preference = "only-managed"

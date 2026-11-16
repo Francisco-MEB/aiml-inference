@@ -17,6 +17,8 @@ Notre Dame's Center for Research Computing (CRC) is funding **$50,000 in hardwar
 | Path | Contents |
 |---|---|
 | [`architecture/`](architecture/) | Architecture group work: per-node model evals on the Dell Pro GB10s. Start with [`week2.md`](architecture/week2.md) and [`base_eval.py`](architecture/base_eval.py). |
+| [`serving/`](serving/) | Model servers. [`serving/vllm/`](serving/vllm/) runs vLLM in its own uv env (`./serving/vllm/serve.sh`). |
+| [`harness/`](harness/) | Clients for the served models. [`chat.py`](harness/chat.py) is a plain-language terminal chat that works with vLLM or Ollama. |
 | [`examples/`](examples/) | Minimal "hello world" usage of local inference servers (e.g. Ollama from Python). |
 | [`scripts/`](scripts/) | Benchmarking and measurement tools. See [`scripts/README.md`](scripts/README.md) for full docs, including the [Ollama concurrency probe](scripts/README.md#ollama_concurrency_probepy). |
 

@@ -11,12 +11,15 @@ Notre Dame CRC is funding $50k of hardware for two competing on-prem LLM inferen
 ## Layout
 - `architecture/`: per-node evals. Copy `base_eval.py` to add an eval (a function taking `model` and returning a metrics dict, added to `EVALS`).
 - `scripts/`: standalone, stdlib-only benchmark tools (e.g. `ollama_concurrency_probe.py`), documented in `scripts/README.md`.
+- `serving/vllm/`: **separate uv project** for vLLM (`cd serving/vllm && uv sync`). Don't add vllm/torch to the root `pyproject.toml`. Launch with `serve.sh` (env-var config).
+- `harness/`: stdlib-only clients for OpenAI-compatible servers (`chat.py`). Keep them engine-agnostic so the same client runs against vLLM, Ollama, or either cluster.
 - `examples/`: minimal Ollama / lm-eval usage.
 
 ## Conventions
 - Git: architecture work branches off the `architecture` branch (see `architecture/week2.md`), and PRs merge into `main`.
 - Benchmark both clusters with the same workloads, models, and quantization wherever the hardware allows. Document every deviation.
 - Make results reproducible: record the model tag, quantization, engine and version, node, and concurrency alongside the numbers.
+- GB10 nodes are **shared** and the memory is unified: always pass an explicit, modest `--gpu-memory-utilization` to vLLM (never its 0.9 default), check `nvidia-smi` / `free -g` first, and stop servers when done. Results measured alongside someone else's job aren't benchmarks.
 - Don't commit model weights, caches, or `__pycache__` (see .gitignore).
 
 ## Skills (enabled for this repo via .claude/settings.json)
