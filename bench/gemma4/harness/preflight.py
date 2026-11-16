@@ -23,8 +23,18 @@ def check(cfg, max_load=2.0, check_load=True):
             problems.append(f"GPU compute process not owned by {me}: {line} (owner {owner})")
     # Any Ollama runner or other inference server belonging to someone else
     procs = common.sh("ps -eo user:20,pid,pcpu,etime,args --sort=-pcpu | head -40")
+    def secs(etime):            # [[dd-]hh:]mm:ss -> seconds
+        d, _, rest = etime.rpartition("-")
+        parts = [int(x) for x in rest.split(":")]
+        while len(parts) < 3:
+            parts.insert(0, 0)
+        return (int(d) if d else 0) * 86400 + parts[0] * 3600 + parts[1] * 60 + parts[2]
+
+    # Only sustained work by another person counts: skip root (system tools such as a
+    # momentary `nvidia-smi -q`) and anything that has been running for under a minute.
     busy = [p for p in procs.splitlines()[1:]
-            if float(p.split()[2]) > 50 and p.split()[0] != me]
+            if float(p.split()[2]) > 50 and p.split()[0] not in (me, "root")
+            and secs(p.split()[3]) >= 60]
     info["busy_foreign_processes"] = busy
     problems += [f"busy process from another user: {p[:140]}" for p in busy]
     sysps = common.loaded_models("http://127.0.0.1:11434")

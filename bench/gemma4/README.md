@@ -162,3 +162,17 @@ checks, load/unload and the server-timing check are Ollama-only and are skipped.
 | `harness/env_snapshot.py` | `env.json` |
 | `harness/make_report.py` | `findings.xlsx` and `report/*.csv` |
 | `server/serve_native.sh`, `serve_docker.sh`, `install_ollama_native.sh` | start/stop the server |
+
+## Finishing an interrupted session
+
+`finish_missing.sh` runs whatever the merged session still lacks (a full slots = users sweep
+for 26B A4B and 12B, any missing quality runs), waiting before each step until nobody else
+has used the GPU for 10 minutes, then rebuilds `results/combined_gemma4_gb10/findings.xlsx`:
+
+```sh
+setsid nohup bench/gemma4/finish_missing.sh > bench/gemma4/.run/finish.log 2>&1 < /dev/null &
+tail -f bench/gemma4/.run/finish.log        # ends with FINISH_DONE
+```
+
+`setsid nohup` keeps it running if your SSH or editor session closes. Stop it with
+`pkill -f finish_missing.sh; pkill -INT -f harness/run_bench.py`.

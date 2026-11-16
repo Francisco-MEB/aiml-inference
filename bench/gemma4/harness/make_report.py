@@ -236,7 +236,8 @@ def build(run_dir, wall_csv=None):
             "active_params_billion": m.get("active_params_b", m.get("params_b")),
             "tag": m["tag"], "quantization": cfg["quantization"],
             "download_size_gb": r((pulled.get(mk, {}).get("size_bytes") or 0) / 1e9),
-            "memory_loaded_gb": r((ps.get("size") or 0) / 1e9),
+            "memory_loaded_gb": r(ps["size"] / 1e9) if ps.get("size") else
+            "not recorded (run interrupted before saving)",
             "on_gpu_pct": r(100 * (ps.get("size_vram") or 0) / ps["size"], 0)
             if ps.get("size") else None,
             "context_per_request": ps.get("context_length"),

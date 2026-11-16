@@ -39,6 +39,8 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--add", action="append", nargs="+", required=True,
                     metavar=("LABEL MODEL_KEY", "RUN_DIR"))
+    ap.add_argument("--quality-from", nargs="*", default=[], metavar="RUN_DIR",
+                    help="run directories whose lm-eval results go into the Quality sheet")
     a = ap.parse_args()
     out = pathlib.Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -93,6 +95,14 @@ def main():
                                    for m in infos}
         minfo.append(info)
 
+    quality, qcfg = [], None
+    for d in map(pathlib.Path, a.quality_from):
+        quality += common.load_json(d / "run.json").get("quality", [])
+        qcfg = common.load_json(d / "effective_config.json")["quality"]
+        p = read_csv(d / "power.csv")
+        if p:
+            total += float(p[-1]["t_unix"]) - float(p[0]["t_unix"])
+
     write_csv(out / "requests.csv", reqs, run_speed.REQ_FIELDS)
     write_csv(out / "native_crosscheck.csv", xcheck, run_speed.XCHECK_FIELDS)
     prow = [power[k] for k in sorted(power, key=float)]
@@ -106,10 +116,16 @@ def main():
                             "equals the number of concurrent users at each level")
     common.write_json(out / "env.json", env0)
     cfg0 = dict(cfg0, models=cfg_models)
+    if qcfg:
+        cfg0["quality"] = dict(qcfg, tasks=sorted({t for q in quality
+                                                   for t in q["tasks_requested"]}),
+                               limit="per run: " + ", ".join(sorted(
+                                   {f"{'+'.join(q['tasks_requested'])}={q['limit']}"
+                                    for q in quality})))
     cfg0["sweep"] = dict(cfg0["sweep"], concurrency_levels=sorted(levels))
     common.write_json(out / "effective_config.json", cfg0)
     common.write_json(out / "run.json", {"run_id": out.name, "phases": phases, "models": minfo,
-                                         "quality": [], "models_skipped": [],
+                                         "quality": quality, "models_skipped": [],
                                          "total_seconds": round(total), "merged_from": sources})
     print(f"merged {len(reqs)} requests from {len(seen_dirs)} runs into {out}")
 

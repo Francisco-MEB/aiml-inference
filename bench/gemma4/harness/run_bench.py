@@ -36,6 +36,7 @@ def main():
     ap.add_argument("--num-parallel", type=int, help="OLLAMA_NUM_PARALLEL for the speed phase")
     ap.add_argument("--context-length", type=int, help="OLLAMA_CONTEXT_LENGTH, speed phase")
     ap.add_argument("--quality-limit", type=int, help="lm-eval --limit")
+    ap.add_argument("--quality-tasks", nargs="+", help="lm-eval task names (overrides config)")
     ap.add_argument("--skip-speed", action="store_true")
     ap.add_argument("--skip-quality", action="store_true")
     ap.add_argument("--with-quality", action="store_true",
@@ -68,6 +69,8 @@ def main():
     budget_s = (cfg.get("run", {}).get("time_budget_hours") or 1e9) * 3600
     do_quality = not a.skip_quality and (cfg["quality"].get("enabled", True) or a.with_quality)
     t_run0 = time.time()
+    if a.quality_tasks:
+        cfg["quality"]["tasks"] = overrides["quality_tasks"] = a.quality_tasks
     if a.quality_limit:
         cfg["quality"]["limit"] = overrides["quality_limit"] = a.quality_limit
     keys = a.models or [m["key"] for m in cfg["models"] if not m.get("optional")]
