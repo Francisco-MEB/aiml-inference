@@ -12,12 +12,45 @@ Notre Dame's Center for Research Computing (CRC) is funding **$50,000 in hardwar
 
 2. Coding Agents: Tokens are EXPENSIVE. We want to give engineers on campus a way to utilize the power of coding agents while not incurring the variable cost from the tokens. **PRIMARY USE: development environments, coding jobs, harness level tasks (the model must interact with its environment)**
 
+## Quick start (on a GB10)
+
+The campus model server plus the two clients, from a fresh clone. Full detail: [`docs/running-vllm.md`](docs/running-vllm.md) and [`docs/ndcode.md`](docs/ndcode.md). The big picture (decisions, versions, open debt) is in [`docs/overview.md`](docs/overview.md).
+
+```sh
+git clone git@github.com:Francisco-MEB/aiml-inference.git && cd aiml-inference
+git switch dev                                 # current work lives on dev
+(cd serving/vllm && uv sync)                   # one time: isolated vLLM env (~9 GB)
+./clients/install.sh                           # one time: installs `ndcode` for your user
+
+nvidia-smi; free -g                            # shared node: need ~65 GB free
+tmux new -s inference
+./serving/vllm/serve.sh                        # Qwen3.5-35B-A3B, tools, 128k; wait for "Application startup complete"
+# Ctrl-b %  (new pane), then either:
+python3 harness/chat.py                        # plain-language chat
+cd ~/some-project && ndcode                    # campus coding agent
+# Ctrl-c in the server pane stops it. Please stop it when you're done (it holds ~60 GB).
+```
+
+The first launch downloads the model (~36 GB) and compiles kernels, which takes a few minutes. Later starts take ~1–2 minutes.
+
+## Documentation
+
+| Doc | Read it for |
+|---|---|
+| [`docs/overview.md`](docs/overview.md) | What exists, why, pinned versions, measurements, change procedures, technical-debt register |
+| [`docs/running-vllm.md`](docs/running-vllm.md) | Running the model server step by step, reading its logs, troubleshooting |
+| [`docs/ndcode.md`](docs/ndcode.md) | Installing and using the campus coding agent; what's locked down; upgrading OpenCode |
+| [`docs/coding-eval/README.md`](docs/coding-eval/README.md) | How `ndcode` compares to Claude Code (local and cloud), with raw data |
+| [`serving/vllm/README.md`](serving/vllm/README.md) | Every `serve.sh` setting |
+| [`harness/README.md`](harness/README.md) | Chat client options |
+| [`scripts/README.md`](scripts/README.md), [`architecture/week2.md`](architecture/week2.md) | Architecture group tools and model primer |
+
 ## Repository layout
 
 | Path | Contents |
 |---|---|
 | [`architecture/`](architecture/) | Architecture group work: per-node model evals on the Dell Pro GB10s. Start with [`week2.md`](architecture/week2.md) and [`base_eval.py`](architecture/base_eval.py). |
-| [`docs/`](docs/) | Runbooks. **Start here:** [`running-vllm.md`](docs/running-vllm.md) (serve the campus model) and [`ndcode.md`](docs/ndcode.md) (the campus coding agent). |
+| [`docs/`](docs/) | Overview, runbooks, and eval results (see [Documentation](#documentation)). |
 | [`serving/`](serving/) | Model servers. [`serving/vllm/`](serving/vllm/) runs vLLM in its own uv env (`./serving/vllm/serve.sh`): Qwen3.5-35B-A3B, tool calling, 128k context. |
 | [`clients/`](clients/) | **`ndcode`**, the zero-config "campus Claude Code" (a locked-down OpenCode distribution). Install with `./clients/install.sh`. |
 | [`harness/`](harness/) | Lightweight clients for the served models. [`chat.py`](harness/chat.py) is a plain-language terminal chat that works with vLLM or Ollama. |
