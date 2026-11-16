@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# ndcode: Notre Dame's campus coding agent.
+#
+# A zero-config launcher for OpenCode (open-source, MIT) wired to the campus
+# vLLM server, so it works like Claude Code but runs entirely on ND hardware.
+# Installed by clients/install.sh. See docs/ndcode.md.
+#
+#   ndcode                      # interactive agent in the current directory
+#   ndcode run "fix the bug"    # one-shot, non-interactive
+#   ndcode --help               # all OpenCode options
+set -euo pipefail
+
+NDCODE_HOME="${NDCODE_HOME:-$HOME/.local/share/ndcode}"
+OPENCODE_BIN="$NDCODE_HOME/current/opencode"
+
+# Campus endpoint. Override for a remote server or (later) the campus gateway.
+export NDCODE_BASE_URL="${NDCODE_BASE_URL:-http://127.0.0.1:8000/v1}"
+export NDCODE_API_KEY="${NDCODE_API_KEY:-campus}"   # no key needed yet; placeholder
+
+# Our locked-down config, plus switches that keep OpenCode off the internet:
+export OPENCODE_CONFIG="$NDCODE_HOME/opencode.json"
+export OPENCODE_DISABLE_AUTOUPDATE=1      # we pin versions; update via clients/install.sh
+export OPENCODE_DISABLE_MODELS_FETCH=1    # don't download the models.dev catalog
+export OPENCODE_DISABLE_FREE_MODELS=1     # hide OpenCode's hosted (cloud) free models
+
+die() { printf '\033[1;31mndcode:\033[0m %s\n' "$*" >&2; exit 1; }
+
+[[ -x "$OPENCODE_BIN" ]] || die "not installed correctly (missing $OPENCODE_BIN). Re-run clients/install.sh."
+[[ -f "$OPENCODE_CONFIG" ]] || die "missing campus config $OPENCODE_CONFIG. Re-run clients/install.sh."
+
+# Commands that don't need the model server.
+case "${1:-}" in
+  -h|--help|-v|--version|debug|uninstall|completion) exec "$OPENCODE_BIN" "$@" ;;
+esac
+
+# Friendly check that the campus model server is up and serving "chat".
+models_json=$(curl -sf -m 5 "$NDCODE_BASE_URL/models" 2>/dev/null) || die "the campus model server isn't reachable at $NDCODE_BASE_URL.
+  On the GB10, start it with:  ./serving/vllm/serve.sh   (see docs/running-vllm.md)
+  From a laptop, open a tunnel: ssh -L 8000:localhost:8000 <gb10-host>"
+grep -q '"id":"chat"' <<<"$models_json" || die "the server at $NDCODE_BASE_URL is up but isn't serving a model named 'chat'. Start it with serving/vllm/serve.sh."
+
+# Always run a private OpenCode server (--standalone) so this session uses the
+# campus config, never a shared background service started with other settings.
+case "${1:-}" in
+  ""|-*)  exec "$OPENCODE_BIN" --standalone "$@" ;;
+  run)    shift; exec "$OPENCODE_BIN" run --standalone "$@" ;;
+  *)      exec "$OPENCODE_BIN" "$@" ;;
+esac

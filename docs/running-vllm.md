@@ -2,7 +2,9 @@
 
 A step-by-step runbook for serving a general-purpose LLM with [vLLM](https://docs.vllm.ai) on one of our Dell Pro GB10 nodes and chatting with it from the terminal. It was first done on `promaxgb10-2c9c` on 2026-11-16.
 
-**What you end up with:** `Qwen/Qwen3.5-9B` served by vLLM at `http://127.0.0.1:8000/v1` (OpenAI-compatible API), plus a plain-language terminal chat (`harness/chat.py`) talking to it.
+**What you end up with:** `Qwen/Qwen3.5-35B-A3B-FP8` served by vLLM at `http://127.0.0.1:8000/v1` (OpenAI- and Anthropic-compatible APIs, tool calling on, 128k context). Both the plain-language terminal chat (`harness/chat.py`) and the campus coding agent ([`ndcode`](ndcode.md)) talk to it.
+
+> The first version of this runbook (2026-11-16) used the smaller `Qwen/Qwen3.5-9B`. It's still available with `MODEL=Qwen/Qwen3.5-9B GPU_UTIL=0.30 MAX_LEN=32768 TOOL_PARSER= ./serving/vllm/serve.sh`, and some numbers below come from that run (marked **9B**).
 
 ---
 
@@ -42,10 +44,10 @@ uv run python -c "import torch, vllm; print(vllm.__version__, torch.version.cuda
 # → 0.33.0 13.0 True
 ```
 
-**Optional: pre-download the model** (~19 GB, into `~/.cache/huggingface`). Otherwise the first launch downloads it.
+**Optional: pre-download the model** (~36 GB, into `~/.cache/huggingface`). Otherwise the first launch downloads it.
 
 ```sh
-uvx --from huggingface_hub hf download Qwen/Qwen3.5-9B
+uvx --from huggingface_hub hf download Qwen/Qwen3.5-35B-A3B-FP8
 ```
 
 ## 2. Start the server (in tmux)
@@ -69,14 +71,16 @@ The first launch on a node takes ~5–7 min: loading weights (~1 min), `torch.co
 ### What `serve.sh` runs
 
 ```sh
-uv run vllm serve Qwen/Qwen3.5-9B \
+uv run vllm serve Qwen/Qwen3.5-35B-A3B-FP8 \
   --served-model-name chat \          # clients ask for model "chat"
   --host 127.0.0.1 --port 8000 \      # only reachable from this machine
-  --gpu-memory-utilization 0.30 \     # reserve 30% of total memory (~36 GB): weights + KV cache
-  --max-model-len 32768 \             # max tokens per conversation (prompt + answer)
+  --gpu-memory-utilization 0.50 \     # reserve 50% of total memory (~60 GB): weights + KV cache
+  --max-model-len 131072 \            # max tokens per conversation (prompt + answer); agents need a lot
   --generation-config auto \          # use the model's recommended sampling defaults
   --reasoning-parser qwen3 \          # put Qwen's "thinking" text in a separate field
-  --language-model-only               # skip Qwen3.5's vision encoder (text chat only)
+  --enable-auto-tool-choice \         # let the model call tools (read/edit files, run commands)...
+  --tool-call-parser qwen3_coder \    # ...in Qwen's tool-call format
+  --language-model-only               # skip Qwen3.5's vision encoder (text only)
 ```
 
 Change any of these with environment variables, e.g.:
@@ -91,7 +95,7 @@ The full table is in [`serving/vllm/README.md`](../serving/vllm/README.md).
 
 ### Reading the startup log
 
-These lines tell you how the memory budget was spent (values from our first run):
+These lines tell you how the memory budget was spent (values from our first **9B** run):
 
 ```
 Model loading took 16.71 GiB memory                       ← the weights
@@ -145,7 +149,7 @@ In the server pane, press `Ctrl-c`. Then confirm the memory came back with `free
 
 ## 5. Performance: what to expect
 
-First measurements (single user, BF16 weights, while another team's Ollama job was also running, so treat them as smoke-test numbers, not benchmarks):
+First measurements on the **9B** (single user, BF16 weights, while another team's Ollama job was also running, so treat them as smoke-test numbers, not benchmarks):
 
 | Metric | Value |
 |---|---|
@@ -156,7 +160,7 @@ Why only ~13 tok/s? Generating each token means reading all ~17 GB of weights fr
 
 - **Quantization** (FP8 / NVFP4 weights): fewer bytes per token, roughly 2–4× faster.
 - **Many users at once:** vLLM batches requests, so *total* throughput across users is far higher than the single-user number. This is what matters for campus capacity, and it's the next thing to measure.
-- **MoE models** (e.g. Qwen3.5-122B-A10B): only ~10B parameters are read per token.
+- **MoE models**: only the "active" parameters are read per token. This is why the campus default is now **Qwen3.5-35B-A3B-FP8**: 35B parameters of knowledge, but only ~3B (~3 GB in FP8) read per token.
 
 ## 6. Troubleshooting (problems we actually hit)
 
@@ -172,5 +176,5 @@ Why only ~13 tok/s? Generating each token means reading all ~17 GB of weights fr
 ## Next steps
 
 - Load-test vLLM with many concurrent users (adapt `scripts/ollama_concurrency_probe.py` to the OpenAI API).
-- Try FP8/NVFP4 and MoE models, and compare against Ollama on the same node.
-- Grow `harness/` into a coding/agent harness: tool calling with `--enable-auto-tool-choice --tool-call-parser qwen3_coder`, reading and editing files.
+- Try more FP8/NVFP4 and MoE models, and compare against Ollama on the same node.
+- ~~Grow `harness/` into a coding agent~~ Done differently: we ship [`ndcode`](ndcode.md), a locked-down OpenCode distribution, instead of building our own agent. Acceptance results are in [`coding-eval/`](coding-eval/).

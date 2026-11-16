@@ -17,9 +17,11 @@ Notre Dame's Center for Research Computing (CRC) is funding **$50,000 in hardwar
 | Path | Contents |
 |---|---|
 | [`architecture/`](architecture/) | Architecture group work: per-node model evals on the Dell Pro GB10s. Start with [`week2.md`](architecture/week2.md) and [`base_eval.py`](architecture/base_eval.py). |
-| [`docs/`](docs/) | Runbooks. **Start here:** [`running-vllm.md`](docs/running-vllm.md) covers serving an LLM with vLLM and chatting with it, step by step. |
-| [`serving/`](serving/) | Model servers. [`serving/vllm/`](serving/vllm/) runs vLLM in its own uv env (`./serving/vllm/serve.sh`). |
-| [`harness/`](harness/) | Clients for the served models. [`chat.py`](harness/chat.py) is a plain-language terminal chat that works with vLLM or Ollama. |
+| [`docs/`](docs/) | Runbooks. **Start here:** [`running-vllm.md`](docs/running-vllm.md) (serve the campus model) and [`ndcode.md`](docs/ndcode.md) (the campus coding agent). |
+| [`serving/`](serving/) | Model servers. [`serving/vllm/`](serving/vllm/) runs vLLM in its own uv env (`./serving/vllm/serve.sh`): Qwen3.5-35B-A3B, tool calling, 128k context. |
+| [`clients/`](clients/) | **`ndcode`**, the zero-config "campus Claude Code" (a locked-down OpenCode distribution). Install with `./clients/install.sh`. |
+| [`harness/`](harness/) | Lightweight clients for the served models. [`chat.py`](harness/chat.py) is a plain-language terminal chat that works with vLLM or Ollama. |
+| [`evals/`](evals/) | Automated evaluations. [`evals/coding/`](evals/coding/) runs real coding tasks through `ndcode`, Claude Code on our model, and cloud Claude. |
 | [`examples/`](examples/) | Minimal "hello world" usage of local inference servers (e.g. Ollama from Python). |
 | [`scripts/`](scripts/) | Benchmarking and measurement tools. See [`scripts/README.md`](scripts/README.md) for full docs, including the [Ollama concurrency probe](scripts/README.md#ollama_concurrency_probepy). |
 

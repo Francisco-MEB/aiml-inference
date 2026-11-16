@@ -14,13 +14,14 @@ uv sync                                   # installs vLLM (aarch64 wheel) into s
 ## Run
 
 ```sh
-./serving/vllm/serve.sh                   # Qwen/Qwen3.5-9B, served as "chat" on 127.0.0.1:8000
+./serving/vllm/serve.sh                   # Qwen/Qwen3.5-35B-A3B-FP8, served as "chat" on 127.0.0.1:8000
 ```
 
-The first launch downloads the model (~19 GB) into `~/.cache/huggingface`. The server is ready when it logs `Application startup complete`. Then chat with it:
+This is the campus default: one server for both plain chat and coding agents, with tool calling and a 128k context. The first launch downloads the model (~36 GB) into `~/.cache/huggingface`. The server is ready when it logs `Application startup complete`. Then chat with it or code with it:
 
 ```sh
-python3 harness/chat.py
+python3 harness/chat.py                   # plain-language chat
+ndcode                                    # coding agent (install: clients/install.sh, see docs/ndcode.md)
 ```
 
 Stop the server with Ctrl-C. **Don't leave it running on a shared node when you're done:** vLLM holds its full memory reservation the whole time it's up.
@@ -31,20 +32,20 @@ Everything is set by environment variable. Extra arguments are passed straight t
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `MODEL` | `Qwen/Qwen3.5-9B` | Hugging Face model ID or local path |
-| `NAME` | `chat` | Model name clients send in requests |
+| `MODEL` | `Qwen/Qwen3.5-35B-A3B-FP8` | Hugging Face model ID or local path |
+| `NAME` | `chat` | Model name clients send in requests (`chat.py` and `ndcode` expect `chat`) |
 | `HOST` / `PORT` | `127.0.0.1` / `8000` | Bind address. Use `HOST=0.0.0.0` to expose it to other machines |
-| `GPU_UTIL` | `0.30` | Fraction of **total** memory vLLM reserves (weights + KV cache) |
-| `MAX_LEN` | `32768` | Max context length (prompt + answer) in tokens |
+| `GPU_UTIL` | `0.50` | Fraction of **total** memory vLLM reserves (weights + KV cache), ~60 GB |
+| `MAX_LEN` | `131072` | Max context length (prompt + answer) in tokens. Coding agents need ≥ 64k |
 | `REASONING_PARSER` | `qwen3` | Splits "thinking" text into its own field. Set it empty for non-reasoning models |
+| `TOOL_PARSER` | `qwen3_coder` | Enables tool calling (`--enable-auto-tool-choice`). Set it empty to disable, or e.g. `hermes` for other models |
 | `TEXT_ONLY` | `1` | Skip the vision encoder of multimodal models. Set `0` for text-only models or to send images |
 
 Examples:
 
 ```sh
-GPU_UTIL=0.5 MAX_LEN=131072 ./serving/vllm/serve.sh            # more KV cache, longer context
-MODEL=Qwen/Qwen3-8B TEXT_ONLY=0 ./serving/vllm/serve.sh          # a different model
-./serving/vllm/serve.sh --enable-auto-tool-choice --tool-call-parser qwen3_coder   # tool calling
+MODEL=Qwen/Qwen3.5-9B GPU_UTIL=0.30 MAX_LEN=32768 ./serving/vllm/serve.sh   # the small 9B (chat only, ~36 GB budget)
+MODEL=Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8 TEXT_ONLY=0 ./serving/vllm/serve.sh   # coding specialist alternative
 ```
 
 ## ⚠️ Shared GPU memory on the GB10
@@ -52,7 +53,7 @@ MODEL=Qwen/Qwen3-8B TEXT_ONLY=0 ./serving/vllm/serve.sh          # a different m
 The GB10's CPU and GPU share one ~121 GB memory pool. vLLM reserves `GPU_UTIL × total` **up front**, and refuses to start if that much isn't free. vLLM's own default is 0.9, which would starve every other process on the box (other people's Ollama runs, evals, even the desktop).
 
 - Check what's running first: `nvidia-smi` and `free -g`.
-- Pick `GPU_UTIL` so that weights (~19 GB for a 9B BF16 model) plus the KV cache fit in what's actually free.
+- Pick `GPU_UTIL` so that weights (~36 GB for the default 35B-A3B FP8, ~19 GB for the 9B BF16) plus the KV cache fit in what's actually free. The default 0.50 needs ~61 GB free at startup.
 - **Numbers measured while someone else's job is running are smoke tests, not benchmarks.**
 
 ## Troubleshooting

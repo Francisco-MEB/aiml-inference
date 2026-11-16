@@ -1,0 +1,1 @@
+Explore this repository and write a short guide for a new team member to a file named ANSWER.md at the repo root. For each top-level directory, say in one or two sentences what it contains and when you'd use it. Do not modify any other files.

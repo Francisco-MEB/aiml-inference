@@ -1,0 +1,36 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "campus": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Notre Dame campus",
+      "options": {
+        "baseURL": "{env:NDCODE_BASE_URL}",
+        "apiKey": "{env:NDCODE_API_KEY}"
+      },
+      "models": {
+        "chat": {
+          "name": "Qwen3.5-35B-A3B (ND campus)",
+          "reasoning": true,
+          "tool_call": true,
+          "temperature": true,
+          "attachment": false,
+          "modalities": { "input": ["text"], "output": ["text"] },
+          "limit": { "context": 131072, "output": 16384 }
+        }
+      }
+    }
+  },
+  "model": "campus/chat",
+  "small_model": "campus/chat",
+  "enabled_providers": ["campus"],
+  "share": "disabled",
+  "autoupdate": false,
+  "permission": {
+    "edit": "ask",
+    "bash": "ask",
+    "external_directory": "ask",
+    "webfetch": "ask",
+    "websearch": "deny"
+  }
+}

@@ -13,6 +13,8 @@ Notre Dame CRC is funding $50k of hardware for two competing on-prem LLM inferen
 - `scripts/`: standalone, stdlib-only benchmark tools (e.g. `ollama_concurrency_probe.py`), documented in `scripts/README.md`.
 - `serving/vllm/`: **separate uv project** for vLLM (`cd serving/vllm && uv sync`). Don't add vllm/torch to the root `pyproject.toml`. Launch with `serve.sh` (env-var config).
 - `harness/`: stdlib-only clients for OpenAI-compatible servers (`chat.py`). Keep them engine-agnostic so the same client runs against vLLM, Ollama, or either cluster.
+- `clients/`: the `ndcode` distribution (pinned OpenCode + `opencode.json` campus config + `ndcode` launcher). **We don't build our own coding agent.** ND owns the platform (model, hardware, serving), and agents are swappable open-source clients. Keep the lockdown (campus provider only, no share/auto-update/websearch, ask before edits/shell). Pin OpenCode to releases ≥ 2 weeks old with a SHA-256.
+- `evals/coding/`: per-task `prompt.md` / optional `setup.sh` / `check.sh`, run by `run.sh` across agent "arms" in throwaway clones. Results summaries go in `docs/coding-eval/`.
 - `examples/`: minimal Ollama / lm-eval usage.
 
 ## Conventions
