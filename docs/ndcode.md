@@ -48,6 +48,8 @@ Out of the box, `ndcode` **asks before it edits a file or runs a shell command**
 
 Like Claude Code, the agent reads project instructions from `AGENTS.md`, and also from `CLAUDE.md` for compatibility. If your repo already has a `CLAUDE.md`, `ndcode` picks it up.
 
+On top of that, every session loads the **campus working rules** ([`clients/AGENTS.md`](../clients/AGENTS.md)): run the real command and the tests before reporting "done", keep existing entry points working, and summarize what was verified. In our [acceptance eval](coding-eval/README.md) the rules made sessions leaner, but the local model can still claim success on a new feature it hasn't run end to end. **Review the diff and run the feature yourself before trusting "done".**
+
 ## What's locked down, and why
 
 The point of `ndcode` is that your code and conversations stay on campus. Compared to a stock OpenCode install:
@@ -91,7 +93,8 @@ NDCODE_BASE_URL=http://127.0.0.1:8000/v1 ndcode      # (laptop install comes in 
 | File | Role |
 |---|---|
 | [`clients/install.sh`](../clients/install.sh) | Pinned OpenCode version + SHA-256, per-user install |
-| [`clients/opencode.json`](../clients/opencode.json) | Campus config: provider, model limits, permissions, lockdown |
+| [`clients/opencode.json`](../clients/opencode.json) | Campus config: provider, model limits, permissions, lockdown, loads the working rules |
+| [`clients/AGENTS.md`](../clients/AGENTS.md) | Campus working rules loaded into every session (verify before "done", keep entry points working) |
 | [`clients/ndcode`](../clients/ndcode) | Launcher: sets env switches, health-checks the server, runs OpenCode `--standalone` |
 
 To upgrade OpenCode: pick a release **at least two weeks old**, update `OPENCODE_VERSION` and the SHA-256 in `install.sh`, check the config still validates (`OPENCODE_CONFIG=clients/opencode.json opencode debug config`), and re-run the coding eval (`evals/coding/run.sh --arms ndcode`).
