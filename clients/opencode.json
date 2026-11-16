@@ -11,10 +11,7 @@
       "models": {
         "chat": {
           "name": "Qwen3.5-35B-A3B (ND campus)",
-          "reasoning": true,
           "tool_call": true,
-          "temperature": true,
-          "attachment": false,
           "modalities": { "input": ["text"], "output": ["text"] },
           "limit": { "context": 131072, "output": 16384 }
         }

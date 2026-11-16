@@ -82,7 +82,7 @@ NDCODE_BASE_URL=http://127.0.0.1:8000/v1 ndcode      # (laptop install comes in 
 |---|---|
 | `the campus model server isn't reachable` | Start it: `./serving/vllm/serve.sh` (see [running-vllm.md](running-vllm.md)) |
 | `isn't serving a model named 'chat'` | The server was started with a different `NAME=`. Restart it with defaults |
-| Agent says it can't call tools / ignores files | The server must run with tool calling. The default `serve.sh` does (`TOOL_PARSER=qwen3_coder`); don't override it with an empty value |
+| `Error: "auto" tool choice requires --enable-auto-tool-choice and --tool-call-parser to be set` | The server was started without tool calling (e.g. the old 9B command). Restart it with the default `serve.sh` (`TOOL_PARSER=qwen3_coder`) |
 | `ndcode: command not found` | Add `~/.local/bin` to `PATH` (the installer prints the line) |
 | Answers stop mid-way on huge tasks | 128k-token context limit. Start a fresh `ndcode` session or break the task up |
 
