@@ -79,6 +79,10 @@ So `ndcode` now ships [`clients/AGENTS.md`](../../clients/AGENTS.md), loaded int
 - Single-user, sequential runs on a shared GB10. No concurrency or capacity measurement yet.
 - One eval check had a bug (05 treated a `# comment` in a code block as a heading). It was fixed, and all runs were re-scored with [`evals/coding/rescore.sh`](../../evals/coding/rescore.sh) (one result flipped: 05 / Claude Code → vLLM, fail → pass).
 
+## Raw data
+
+Every CSV behind these tables is in [`data/`](data/) (columns and setup are described there).
+
 ## Reproduce
 
 ```sh
