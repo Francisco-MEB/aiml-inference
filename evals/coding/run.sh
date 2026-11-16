@@ -94,8 +94,8 @@ for tdir in "${task_dirs[@]}"; do
 
     if (cd "$work" && EVAL_BASE_URL="$VLLM/v1" bash "$tdir/check.sh") > "$run/check.log" 2>&1; then pass=1; else pass=0; fi
     secs=$(awk -v a="$t0" -v b="$t1" 'BEGIN {printf "%.0f", b - a}')
-    cost=""
-    if [[ "$arm" == claude-* ]]; then
+    cost=""   # only real spend: claude-local reports a notional cost at Anthropic prices, but runs free on our server
+    if [[ "$arm" == claude-cloud ]]; then
       cost=$(python3 -c 'import json,sys
 try: print(json.loads(open(sys.argv[1]).read().strip().splitlines()[-1]).get("total_cost_usd", ""))
 except Exception: print("")' "$run/agent.log")
