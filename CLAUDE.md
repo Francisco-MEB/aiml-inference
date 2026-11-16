@@ -3,6 +3,8 @@
 ## Project
 Notre Dame CRC is funding $50k of hardware for two competing on-prem LLM inference clusters, serving general-purpose and coding models to campus. Both get built and benchmarked head to head, and CRC scales up the winner. See README.md for the use cases (FERPA-safe classroom chatbots/RAG; coding agents).
 
+**Start with [`docs/overview.md`](docs/overview.md)**: decisions and their reasons, architecture, pinned versions, change procedures, and the technical-debt register. When you change a decision, a pinned version (vLLM, model revision, OpenCode), or pay down or add debt, update `docs/overview.md` in the same change. New eval runs: save the CSV in `docs/coding-eval/data/` and update `docs/coding-eval/README.md`.
+
 ## Environment
 - Nodes: Dell Pro GB10 (Grace ARM64 CPU + Blackwell GPU, ~128 GB unified memory). Assume **aarch64**: check that wheels and containers have arm64/sbsa builds.
 - Python ≥ 3.12 managed with **uv** (`uv run <script>`). Root env deps: `ollama`, `lm-eval[api]`. vLLM has its own env (see Layout).
