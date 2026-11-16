@@ -2,10 +2,15 @@
 # Pass if --json works against the live server, a new test exists and passes, and the README mentions it.
 set -euo pipefail
 BASE="${EVAL_BASE_URL:-http://127.0.0.1:8000/v1}"
-out=$(python3 harness/chat.py --base-url "$BASE" --prompt "Reply with just the word OK." --json --max-tokens 50)
+err=$(mktemp)
+out=$(python3 harness/chat.py --base-url "$BASE" --prompt "Reply with just the word OK." --json --max-tokens 50 2>"$err") \
+  || { echo "chat.py --json exited non-zero. stdout:"; echo "$out"; echo "stderr:"; cat "$err"; exit 1; }
 python3 - "$out" <<'EOF'
 import json, sys
-obj = json.loads(sys.argv[1])
+try:
+    obj = json.loads(sys.argv[1])
+except json.JSONDecodeError:
+    sys.exit(f"stdout is not exactly one JSON object:\n{sys.argv[1]!r}")
 missing = {"answer", "ttft", "tokens", "tok_s", "total"} - set(obj)
 assert not missing, f"missing keys: {missing}"
 assert isinstance(obj["answer"], str) and obj["answer"].strip(), "empty answer"

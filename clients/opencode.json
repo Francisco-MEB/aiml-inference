@@ -18,6 +18,7 @@
       }
     }
   },
+  "instructions": ["{env:NDCODE_HOME}/AGENTS.md"],
   "model": "campus/chat",
   "small_model": "campus/chat",
   "enabled_providers": ["campus"],

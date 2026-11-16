@@ -10,7 +10,7 @@
 #   ndcode --help               # all OpenCode options
 set -euo pipefail
 
-NDCODE_HOME="${NDCODE_HOME:-$HOME/.local/share/ndcode}"
+export NDCODE_HOME="${NDCODE_HOME:-$HOME/.local/share/ndcode}"   # exported: opencode.json loads $NDCODE_HOME/AGENTS.md
 OPENCODE_BIN="$NDCODE_HOME/current/opencode"
 
 # Campus endpoint. Override for a remote server or (later) the campus gateway.

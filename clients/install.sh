@@ -7,7 +7,7 @@
 # What it does:
 #   1. downloads a pinned OpenCode release and verifies its SHA-256
 #   2. puts it in ~/.local/share/ndcode/opencode-<version>/
-#   3. installs the campus config (~/.local/share/ndcode/opencode.json)
+#   3. installs the campus config + working rules (~/.local/share/ndcode/{opencode.json,AGENTS.md})
 #   4. installs the `ndcode` command into ~/.local/bin
 set -euo pipefail
 
@@ -55,6 +55,7 @@ fi
 say "Installing campus config and ndcode command"
 ln -sfn "opencode-$OPENCODE_VERSION" "$NDCODE_HOME/current"
 install -m 644 "$SRC_DIR/opencode.json" "$NDCODE_HOME/opencode.json"
+install -m 644 "$SRC_DIR/AGENTS.md" "$NDCODE_HOME/AGENTS.md"   # campus working rules (verify before "done")
 mkdir -p "$BIN_DIR"
 install -m 755 "$SRC_DIR/ndcode" "$BIN_DIR/ndcode"
 
