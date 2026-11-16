@@ -1,0 +1,6 @@
+task,arm,pass,seconds,gen_tokens,prompt_tokens,cost_usd
+01-explain,ndcode,1,51,3819,66134,
+02-fix-bug,ndcode,1,28,2009,65568,
+03-feature,ndcode,0,172,11483,359687,
+04-refactor,ndcode,1,88,6505,226958,
+05-docs,ndcode,1,51,3880,52318,

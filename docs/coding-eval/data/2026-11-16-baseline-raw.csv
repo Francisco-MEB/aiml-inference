@@ -1,0 +1,16 @@
+task,arm,pass,seconds,gen_tokens,prompt_tokens,cost_usd
+01-explain,ndcode,1,38,2899,57330,
+01-explain,claude-local,1,44,1819,107452,
+01-explain,claude-cloud,1,25,,,0.26470920000000003
+02-fix-bug,ndcode,1,35,2596,65783,
+02-fix-bug,claude-local,1,21,891,74927,
+02-fix-bug,claude-cloud,1,14,,,0.1740326
+03-feature,ndcode,0,186,13946,346161,
+03-feature,claude-local,0,230,10436,593054,
+03-feature,claude-cloud,1,85,,,0.40625819999999996
+04-refactor,ndcode,1,145,10602,451367,
+04-refactor,claude-local,0,68,3074,219113,
+04-refactor,claude-cloud,1,54,,,0.3317546
+05-docs,ndcode,1,51,3874,51208,
+05-docs,claude-local,0,27,1187,47034,
+05-docs,claude-cloud,1,105,,,0.5075595999999999
