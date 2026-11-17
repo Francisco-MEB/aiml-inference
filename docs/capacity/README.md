@@ -2,7 +2,7 @@
 
 How many simultaneous users can one GB10 serve, and what runs out first: the GPU, the CPU (Python) or memory? This is the bake-off's core metric, and it also settles a question that keeps coming up: **would a C++ stack serve campus better than our Python-orchestrated one?**
 
-*Status (2026-11-17): first single-Dell runs done (chat, RAG, and a RAG A/B with `--async-scheduling`). See [Results](#results). Two-Dell runs (two copies vs one model split across both) are next.*
+*Status (2026-11-17): first single-Dell runs done (chat, RAG, and a RAG A/B with `--async-scheduling`). See [Results](#results). Two-Dell runs (two copies vs one model split across both) are next. An interactive version with charts, built from the same CSVs, is published as a private Claude page (ask Francisco for access).*
 
 ## The question: is Python a bottleneck at 15,000 users?
 
@@ -42,7 +42,7 @@ The number of nodes comes from [Little's law](https://en.wikipedia.org/wiki/Litt
 
 | Promise per user | Users per GB10 | GB10 total tok/s | GB10s for 6,700–13,300 tok/s |
 |---|---|---|---|
-| ~20 tok/s (feels instant) | 8 | 160 | **42–83** |
+| ~20 tok/s (feels instant) | 8 | 160 | **42–84** |
 | ~11 tok/s (faster than reading) | 32 | 354 | **19–38** |
 | ~5 tok/s (about reading speed) | 128 | 676 | **10–20** |
 
