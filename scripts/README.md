@@ -5,6 +5,65 @@ Standalone benchmarking and measurement tools. Each script is self-contained and
 | Script | What it answers |
 |---|---|
 | [`ollama_concurrency_probe.py`](ollama_concurrency_probe.py) | How does one Ollama server hold up as more users hit it at the same time? |
+| [`openai_capacity_probe.py`](openai_capacity_probe.py) | The same question for any OpenAI-compatible server (vLLM, Ollama, either cluster), including several servers at once |
+| [`sample_node.py`](sample_node.py) | While load runs: is the GPU, the CPU (Python) or KV-cache memory the bottleneck? |
+
+The capacity method, how to read the results, and campus sizing are in [`docs/capacity/`](../docs/capacity/README.md).
+
+---
+
+## `openai_capacity_probe.py`
+
+A load generator for any server that speaks the OpenAI `/v1/chat/completions` API. It fires N streaming requests at the same instant, repeats that `--reps` times per level, and writes one CSV row per request. Stdlib only.
+
+```bash
+python3 scripts/openai_capacity_probe.py --levels 1 2 4 8 16 32 64 --prompt-set chat \
+    --revision 9d1823d2 --server-note "serve.sh GPU_UTIL=0.50" --out run.csv
+# two servers, round-robin (no load balancer needed; start each with HOST=<its link IP>):
+python3 scripts/openai_capacity_probe.py --base-url http://10.100.64.1:8000/v1 \
+    --base-url http://10.100.64.2:8000/v1 --levels 2 4 8 16 32 64 --out replicas.csv
+```
+
+| Flag | Default | Description |
+|---|---|---|
+| `--base-url` | `http://127.0.0.1:8000/v1` | Server base URL. Repeat it to spread requests across servers. |
+| `--model` | `chat` | Served model name (`serve.sh` serves as `chat`). Checked against `/v1/models`. |
+| `--revision` | `""` | Model revision, recorded in the CSV. |
+| `--levels` | `1 2 4 8 16 32` | Concurrency levels. |
+| `--reps` | `3` | Batches per level. |
+| `--max-tokens` | `400` | Output tokens per request. |
+| `--prompt-set` | `chat` | `chat`: short, varied questions. `rag`: ~4k-token context plus a question. |
+| `--no-unique` | off | By default each prompt gets a unique tag so it can't reuse another request's cached prefix. This flag removes the tag to measure the cached case. |
+| `--no-fixed-length` | off | By default it sends `ignore_eos`, so every answer is exactly `--max-tokens` long and runs are comparable (vLLM/SGLang; other servers ignore it). |
+| `--api-key`, `--timeout` | none, 900 s | For gateways; per-request timeout. |
+| `--server-note` | `""` | Server config, copied into every row. |
+| `--out` | `capacity_probe.csv` | Output CSV (overwritten). |
+
+**Columns (client-measured):**
+- `ttft_s`: time to first token, including queueing.
+- `e2e_s`: whole request.
+- `stream_tps`: this user's tok/s after the first token.
+- `itl_p50_ms` / `itl_p95_ms`: gaps between streamed chunks.
+- `batch_agg_tps`: total output tokens in the batch ÷ batch wall time, i.e. the node's throughput.
+- `output_tokens` / `prompt_tokens`: from the server's `usage`.
+- `error`.
+
+Every row also carries the run metadata (servers, engine version, model, revision, prompt set and so on). Thinking tokens (`reasoning_content`) count as output, because they cost the same GPU time.
+
+## `sample_node.py`
+
+Run it on the server node while the probe runs. Every second it records:
+- GPU busy % (`utilization.gpu`), watts and SM clock.
+- CPU% of the vLLM engine-core, worker and API processes. It records the whole process and also its **main thread**, which is where Python's scheduler loop runs.
+- vLLM's `/metrics`: requests running and waiting, KV-cache usage, and server-side generated tok/s.
+
+It counts only your own vLLM processes unless you pass `--all-users`. Stop it with Ctrl-C or `--duration`.
+
+```bash
+python3 scripts/sample_node.py --out samples.csv            # --metrics-url '' to skip vLLM metrics
+```
+
+The table for reading the results (GPU-bound vs Python-bound vs memory-bound) is in [`docs/capacity/README.md`](../docs/capacity/README.md#reading-the-results).
 
 ---
 
