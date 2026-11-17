@@ -183,6 +183,6 @@ Why only ~13 tok/s? Generating each token means reading all ~17 GB of weights fr
 
 ## Next steps
 
-- Load-test vLLM with many concurrent users (adapt `scripts/ollama_concurrency_probe.py` to the OpenAI API).
+- Load-test vLLM with many concurrent users: the tools are ready, see [`capacity/`](capacity/README.md#running-it).
 - Try more FP8/NVFP4 and MoE models, and compare against Ollama on the same node.
 - ~~Grow `harness/` into a coding agent~~ Done differently: we ship [`ndcode`](ndcode.md), a locked-down OpenCode distribution, instead of building our own agent. Acceptance results are in [`coding-eval/`](coding-eval/).

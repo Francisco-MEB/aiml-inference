@@ -41,6 +41,7 @@ The first launch downloads the model (~36 GB) and compiles kernels, which takes 
 | [`docs/running-vllm.md`](docs/running-vllm.md) | Running the model server step by step, reading its logs, troubleshooting |
 | [`docs/ndcode.md`](docs/ndcode.md) | Installing and using the campus coding agent; what's locked down; upgrading OpenCode |
 | [`docs/coding-eval/README.md`](docs/coding-eval/README.md) | How `ndcode` compares to Claude Code (local and cloud), with raw data |
+| [`docs/capacity/README.md`](docs/capacity/README.md) | How many users a node serves, what saturates first (GPU vs Python), and how many nodes campus needs |
 | [`serving/vllm/README.md`](serving/vllm/README.md) | Every `serve.sh` setting |
 | [`harness/README.md`](harness/README.md) | Chat client options |
 | [`scripts/README.md`](scripts/README.md), [`architecture/week2.md`](architecture/week2.md) | Architecture group tools and model primer |
