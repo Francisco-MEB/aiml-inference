@@ -1,0 +1,32 @@
+{
+  "ok": false,
+  "problems": [
+    "GPU compute process not owned by gdasilv2: 182753, VLLM::EngineCore, 22701 MiB (owner other-user)",
+    "busy process from another user: other-user              182753 81.9       04:37 VLLM::EngineCore"
+  ],
+  "info": {
+    "gpu_compute_apps": [
+      {
+        "line": "182753, VLLM::EngineCore, 22701 MiB",
+        "owner": "other-user"
+      }
+    ],
+    "busy_foreign_processes": [
+      "other-user              182753 81.9       04:37 VLLM::EngineCore"
+    ],
+    "system_ollama_11434_loaded": [],
+    "loadavg": [
+      4.58935546875,
+      3.39306640625,
+      2.9130859375
+    ],
+    "foreign_cpu_pct_now": 97.9,
+    "who": [
+      "aiml_club"
+    ],
+    "docker_ps": "permission denied while trying to connect to the docker API at unix:///var/run/docker.sock",
+    "container_shims": [],
+    "mem": "Mem:             121          31          56           0          34          89",
+    "gpu": "81 %, 27.81 W, 67"
+  }
+}

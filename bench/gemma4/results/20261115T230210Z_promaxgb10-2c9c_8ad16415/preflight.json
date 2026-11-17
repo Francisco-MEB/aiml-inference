@@ -1,0 +1,26 @@
+{
+  "ok": false,
+  "problems": [
+    "busy process from another user: root                   83936  100       00:00 nvidia-smi -q"
+  ],
+  "info": {
+    "gpu_compute_apps": [],
+    "busy_foreign_processes": [
+      "root                   83936  100       00:00 nvidia-smi -q"
+    ],
+    "system_ollama_11434_loaded": [],
+    "loadavg": [
+      4.52392578125,
+      2.3095703125,
+      1.80078125
+    ],
+    "foreign_cpu_pct_now": 95.2,
+    "who": [
+      "aiml_club"
+    ],
+    "docker_ps": "permission denied while trying to connect to the docker API at unix:///var/run/docker.sock",
+    "container_shims": [],
+    "mem": "Mem:             121           4         103           0          14         117",
+    "gpu": "0 %, 12.45 W, 56"
+  }
+}

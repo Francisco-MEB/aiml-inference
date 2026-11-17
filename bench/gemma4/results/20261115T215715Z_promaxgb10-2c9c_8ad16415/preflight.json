@@ -1,0 +1,22 @@
+{
+  "ok": true,
+  "problems": [],
+  "info": {
+    "gpu_compute_apps": [],
+    "busy_foreign_processes": [],
+    "system_ollama_11434_loaded": [],
+    "loadavg": [
+      1.20166015625,
+      1.994140625,
+      2.390625
+    ],
+    "foreign_cpu_pct_now": 0.5,
+    "who": [
+      "aiml_club"
+    ],
+    "docker_ps": "permission denied while trying to connect to the docker API at unix:///var/run/docker.sock",
+    "container_shims": [],
+    "mem": "Mem:             121           6          61           0          55         115",
+    "gpu": "0 %, 12.60 W, 60"
+  }
+}
