@@ -13,6 +13,11 @@ The one-page map of what we've built, why, how it fits together, and what's stil
   - [`harness/chat.py`](../harness/chat.py): a plain-language terminal chat.
   - **[`ndcode`](ndcode.md)**: a zero-config "campus Claude Code" (a pinned, locked-down OpenCode).
 - On a 5-task [acceptance eval](coding-eval/README.md), `ndcode` passed every everyday task (16/16 runs) at $0 marginal cost, and failed "new feature with an exact output spec" in all 7 attempts. Cloud Claude passed 5/5 for $1.68.
+- **Capacity (2026-11-17, one GB10):**
+  - Chat: 160 tok/s total at 8 users × 20 tok/s each, rising to 676 tok/s at 128 users × 5 tok/s.
+  - Long-document RAG: ~8 users per GB10 before the first token takes >5 s (prompt reading is capped at ~5k tok/s).
+  - Python is not the bottleneck (async-scheduling A/B: <1% change).
+  - At the stated peak assumptions, 15k people need roughly 19–38 GB10s at ~11 tok/s per user ([capacity](capacity/README.md)).
 - Strategy: **ND owns the platform** (model choice, hardware, serving, later a gateway). Coding agents are swappable open-source clients. We don't build our own agent.
 
 ## 2. Goal
@@ -25,7 +30,7 @@ CRC funds **$50k of hardware** for **two competing inference clusters**. Both ge
 |---|---|---|---|
 | Serving engine | vLLM 0.33 | Continuous batching, prefix caching, OpenAI + Anthropic APIs, tool-call parsers, aarch64/CUDA 13 wheels | SGLang/TensorRT-LLM clearly win on cluster hardware |
 | vLLM install | Own uv project `serving/vllm/` | No sudo/Docker; keeps ~9 GB torch stack out of the team env | Moving to a managed service |
-| Language | Python orchestrates; the math runs in C++/CUDA (FlashInfer, CUTLASS, NCCL, CUDA graphs). No C++ rewrite | Python runs once per batch step, not per user. Decode is capped by memory bandwidth, and campus scale is a node-count question ([capacity](capacity/README.md#the-question-is-python-a-bottleneck-at-15000-users)) | The capacity benchmark shows the GPU idling while the engine's main thread is pinned, even after `--async-scheduling` → TensorRT-LLM arm |
+| Language | Python orchestrates; the math runs in C++/CUDA (FlashInfer, CUTLASS, NCCL, CUDA graphs). No C++ rewrite | Measured 2026-11-17: GPU 96% busy from 1 to 128 users, the engine's Python loop at 6–26% of a core while generating, and `--async-scheduling` changed throughput <1%. Campus scale is a GPU-count question ([capacity](capacity/README.md#the-question-is-python-a-bottleneck-at-15000-users)) | The capacity benchmark shows the GPU idling while the engine's main thread is pinned, even after `--async-scheduling` → TensorRT-LLM arm |
 | Python for vLLM | uv-managed CPython 3.12 | System Python lacks `Python.h` (Triton needs it); 3.15 lacks wheels | Deps ship 3.13+ wheels |
 | Model | Qwen3.5-35B-A3B-FP8 @ `9d1823d2` | MoE: ~3B active/token, fast on the GB10's ~273 GB/s; strong tool use; one model for chat + coding | Bigger cluster can host Qwen3-Coder-Next / 100B+ |
 | Memory budget | `GPU_UTIL=0.50` (~60 GB) | Shared node, unified memory | Node becomes dedicated |
@@ -109,9 +114,16 @@ Caches:
 | Weights | 16.7 GiB loaded | ~36 GB download |
 | Context | 32,768 | 131,072 |
 | KV cache | 385k tokens (11.8 × 32k) | 1,097 blocks (~8.4 × 128k) |
-| Single-user speed | 13.2–13.4 tok/s | 54.9 tok/s |
+| Single-user speed | 13.2–13.4 tok/s | 54.9 tok/s (53 in the capacity run) |
 | Time to first token | 0.12–0.19 s | 0.13 s |
 | Tool calling | off | on, verified |
+
+**Capacity** (2026-11-17, idle node, full tables in [`capacity/`](capacity/README.md#results)):
+
+| Workload | 1 user | 8 users | 32 users | 128 users |
+|---|---|---|---|---|
+| Chat: total tok/s (per user) | 53 (53) | 160 (20) | 354 (11) | 676 (5.3) |
+| RAG ~3.4k-token prompt: total tok/s, first-token p95 | 48, 0.7 s | 129, 5.5 s | 208, 25 s | 229, 154 s |
 
 During the coding eval, vLLM served ~90% of prompt tokens from its prefix cache (4.79M of 5.33M). Single-user speed is bounded by memory bandwidth ÷ bytes read per token. That's why the MoE, which reads ~3B params per token, is ~4× faster than the dense 9B.
 
@@ -130,13 +142,14 @@ During the coding eval, vLLM served ~90% of prompt tokens from its prefix cache 
 
 ## 10. Technical debt register
 
+**Paid down 2026-11-17:** the vLLM capacity benchmark (tools, chat + RAG runs, Python A/B).
+
 **Paid down 2026-11-16:** pinned the default model revision; CLAUDE.md refreshed; runbook has the 35B KV numbers; removed a tracked `.pyc`; OpenCode config cleaned to supported keys; raw eval data saved.
 
 | Item | Risk | Severity | Next action |
 |---|---|---|---|
 | No auth, quotas, usage logs | Anyone with a shell on the GB10 can use the server | medium | Gateway (per-user keys, quotas, logs) before any network exposure |
 | Server runs in a personal tmux | Dies with the session/reboot; no restart or alerting | medium | systemd unit or container, restart policy, log rotation, health check |
-| Capacity benchmark built but not run | The bake-off's core metric and campus sizing are still unmeasured | **high** | Run [`capacity/`](capacity/README.md#running-it) on a free node (chat + rag sets), fill in Results |
 | Small, in-repo eval suite | 5 tasks, few runs; checks partly keyword-based | medium | More tasks per class, other repos |
 | Exact-spec feature weakness | Agent can claim success on wrong output | medium | Documented for users; try coding-specialist / larger models |
 | OpenCode config uses deprecated keys | Next upgrade may break the lockdown | medium | Migrate to `providers`/`permissions`/`policies` when upgrading |
@@ -159,13 +172,13 @@ During the coding eval, vLLM served ~90% of prompt tokens from its prefix cache 
   - `test/ollama-concurrency`
 - **Shared node:**
   - `gdasilv2` runs Ollama + lm-eval benchmarks (~34 GB).
-  - Since 2026-11-17 the `aiml_club` account has run a two-node vLLM: `nvidia/Qwen3.8-27B-NVFP4`, `--tensor-parallel-size 2 --nnodes 2`, master `10.100.64.2`, `--gpu-memory-utilization 0.8`. It uses ~100 of 121 GB.
+  - On 2026-11-17 the `aiml_club` account had a two-node vLLM running (stopped before our capacity runs that day): `nvidia/Qwen3.8-27B-NVFP4`, `--tensor-parallel-size 2 --nnodes 2`, master `10.100.64.2`, `--gpu-memory-utilization 0.8`. It ran in a Docker container and held ~100 of 121 GB on this Dell.
   - Check `nvidia-smi` / `free -g` / `ps` before starting vLLM.
 - **Two-node link:** the two GB10s are cabled over ConnectX-7 (2 × 200 Gb/s, RoCE). This node is `10.100.64.2` / `10.100.65.2`, the peer is `.1`. NVIDIA Sync (laptop app) manages the pair. vLLM's native `--nnodes/--node-rank/--master-addr` already works across it (the club server above). Two-node serving for our stack is parked until the single-node capacity numbers exist.
 
 ## 12. Next milestones
 
-1. **Capacity benchmark** for vLLM (the bake-off's core metric). Tools are done ([`capacity/`](capacity/README.md)), the run is pending a free node. After that: two replicas vs. one model across both nodes.
+1. **Two-Dell capacity:** two copies (one per GB10) vs one model split across both, same probe. Single-GB10 results are done ([`capacity/`](capacity/README.md)). Needs our vLLM env, the weights and SSH on the peer.
 2. **Managed service** (systemd, restarts, logs, health checks).
 3. **Campus gateway** (auth, keys, quotas, logs). Then network exposure and laptop installs of `ndcode`.
 4. **Model bake-off:** Qwen3-Coder-30B-A3B, gpt-oss-120b, then larger models on the bigger cluster, scored by the coding eval and the capacity benchmark.
