@@ -65,7 +65,7 @@ def verify(cfg, m, hash_blob=True):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--config", default=str(common.BENCH / "config/gemma4_ollama_native.json"))
+    ap.add_argument("--config", default=str(common.BENCH / "configs/TEMPLATE.json"))
     ap.add_argument("--models", nargs="+", help="model keys (default: all non-optional)")
     ap.add_argument("--out", default="models.json")
     ap.add_argument("--no-pull", action="store_true", help="verify only")

@@ -1,4 +1,4 @@
-"""Shared helpers for the Gemma 4 benchmark harness. Standard library only."""
+"""Shared helpers for the club benchmark harness (bench/). Standard library only."""
 import hashlib
 import json
 import os
@@ -8,8 +8,9 @@ import time
 import urllib.error
 import urllib.request
 
-BENCH = pathlib.Path(__file__).resolve().parents[1]   # bench/gemma4
-REPO = BENCH.parents[1]
+BENCH = pathlib.Path(__file__).resolve().parents[1]   # bench/
+REPO = BENCH.parent
+RESULTS = BENCH / "results"
 
 
 def sha256_file(path, chunk=1 << 22):
@@ -63,6 +64,14 @@ def percentile(xs, p):
         return None
     k = max(1, -(-len(xs) * p // 100))   # ceil
     return xs[int(k) - 1]
+
+
+def num(v):
+    """float(v), or None for blanks and non-numbers (CSV cells are text)."""
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
 
 
 def mean(xs):

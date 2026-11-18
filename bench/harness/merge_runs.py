@@ -112,8 +112,8 @@ def main():
     env0["cli_overrides"] = "see merged_from: one entry per source run"
     env0["server_env_set_by_harness"] = dict(
         env0["server_env_set_by_harness"],
-        OLLAMA_NUM_PARALLEL="varies by variant: 'slots=16' is fixed at 16, 'slots=users' "
-                            "equals the number of concurrent users at each level")
+        OLLAMA_NUM_PARALLEL="varies by run: see merged_from (protocol studies use slots equal "
+                            "to the number of simultaneous users at each level)")
     common.write_json(out / "env.json", env0)
     cfg0 = dict(cfg0, models=cfg_models)
     if qcfg:

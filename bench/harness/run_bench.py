@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""One command for a whole run: pre-flight -> server -> pull+verify -> speed sweep ->
-quality eval -> report. Everything lands in results/<run_id>/.
+"""One run: pre-flight -> server -> pull+verify -> speed sweep -> quality eval -> report.
+Everything lands in bench/results/<study_id>/<run_id>/.
 
-  python3 harness/run_bench.py                                   # full sweep, pinned config
-  python3 harness/run_bench.py --models e4b --levels 1 2 --reps 1 \
-      --max-tokens 32 --num-parallel 2 --quality-limit 5         # smoke test
+Protocol studies are normally driven level by level by run_protocol.py (server slots = users),
+which calls this once per model and level:
+  python3 harness/run_bench.py --config configs/<study>.json --models m --levels 8 \
+      --num-parallel 8 --reps 5 --workloads short_chat coding
 """
 import argparse
 import copy
@@ -20,6 +21,7 @@ from datetime import UTC, datetime
 import common
 import env_snapshot
 import preflight
+import protocol
 import pull_models
 import run_quality
 import run_speed
@@ -28,7 +30,14 @@ import run_speed
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--config", default=str(common.BENCH / "config/gemma4_ollama_native.json"))
+    ap.add_argument("--config", required=True, help="study config, e.g. configs/<study>.json")
+    ap.add_argument("--study", help="results folder name (default: the config's study.id)")
+    ap.add_argument("--workloads", nargs="+", help=f"subset of {protocol.WORKLOADS}")
+    ap.add_argument("--level-cap-min", type=float,
+                    help="stop starting new batches of a workload level after this many minutes")
+    ap.add_argument("--allow-deviation", action="store_true",
+                    help="run a config that breaks the protocol (tests only; recorded in env.json)")
+    ap.add_argument("--no-report", action="store_true", help="skip the per-run spreadsheet")
     ap.add_argument("--models", nargs="+", help="model keys; default: all non-optional")
     ap.add_argument("--levels", type=int, nargs="+")
     ap.add_argument("--reps", type=int)
@@ -47,10 +56,25 @@ def main():
     ap.add_argument("--ignore-preflight", action="store_true",
                     help="run even if pre-flight says STOP (only after agreeing with the others)")
     a = ap.parse_args()
+    # Background jobs ignore Ctrl-C, so SIGTERM is the stop signal: exit through the finally
+    # block below, which stops the benchmark server and the power logger.
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
 
     cfg = common.load_json(a.config)
     pinned = copy.deepcopy(cfg)
     overrides = {}
+    deviations = protocol.check_config(cfg) if cfg.get("protocol") == protocol.VERSION else \
+        [f"config is not a {protocol.VERSION} study (protocol={cfg.get('protocol')!r})"]
+    if cfg.get("protocol") == protocol.VERSION and deviations and not a.allow_deviation:
+        raise SystemExit("config breaks the protocol:\n  " + "\n  ".join(deviations))
+    if a.workloads:
+        unknown = set(a.workloads) - set(protocol.WORKLOADS)
+        if unknown:
+            raise SystemExit(f"unknown workloads {sorted(unknown)}; use {protocol.WORKLOADS}")
+        overrides["workloads"] = a.workloads
+    if a.level_cap_min:
+        cfg["sweep"]["level_cap_s"] = a.level_cap_min * 60
+        overrides["level_cap_min"] = a.level_cap_min
     if a.levels:
         cfg["sweep"]["concurrency_levels"] = overrides["concurrency_levels"] = a.levels
     if a.reps:
@@ -93,10 +117,18 @@ def main():
 
     run_id = (datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + "_" + platform.node()
               + "_" + common.canonical_hash(pinned)[:8])
-    run_dir = common.BENCH / "results" / run_id
+    study = a.study or cfg.get("study", {}).get("id") or "unsorted"
+    run_dir = common.RESULTS / study / run_id
+    k = 2
+    while run_dir.exists():                 # two runs started in the same second
+        run_dir = common.RESULTS / study / f"{run_id}-{k}"
+        k += 1
+    run_id = run_dir.name
     run_dir.mkdir(parents=True)
     print(f"run_id {run_id}\nrun dir {run_dir}")
     prompts = common.load_prompts(cfg)
+    if a.workloads:
+        prompts = [p for p in prompts if p["id"] in a.workloads]
 
     pf = preflight.check(cfg)
     common.write_json(run_dir / "preflight.json", pf)
@@ -150,6 +182,18 @@ def main():
 
         envj = env_snapshot.snapshot(cfg, run_id, overrides, pf, recs,
                                      run_dir / "server_speed.log", env)
+        envj.update({"protocol_version": cfg.get("protocol", "pre-1.0"), "study_id": study,
+                     "study": cfg.get("study", {}), "quantization": cfg.get("quantization", ""),
+                     "protocol_deviations": deviations,
+                     "workloads": [p["id"] for p in prompts]})
+        row_meta = {
+            "protocol_version": envj["protocol_version"], "study_id": study,
+            "machine": cfg.get("study", {}).get("machine") or platform.node(),
+            "backend": f"{cfg['backend']['type']}/{cfg['server']['mode']}",
+            "server_version": envj["server_version_reported"],
+            "quantization": envj["quantization"],
+            "slots": env.get("OLLAMA_NUM_PARALLEL", ""),
+        }
         common.write_json(run_dir / "env.json", envj)
         eff = {k: v for k, v in cfg.items() if not k.startswith("_")}
         eff["models"] = models
@@ -181,7 +225,8 @@ def main():
                         break
                     print(f"== speed: {m['tag']} (elapsed {elapsed / 60:.0f} min)")
                     t0 = time.time()
-                    model_info.append(run_speed.run_model(cfg, m, prompts, run_id, w1, w2))
+                    model_info.append(run_speed.run_model(cfg, m, prompts, run_id, w1, w2,
+                                                          row_meta=row_meta))
                     f1.flush()
                     f2.flush()
                     phase(f"speed:{m['key']}", t0)
@@ -214,8 +259,9 @@ def main():
         power.send_signal(signal.SIGTERM)
         power.wait(timeout=10)
         save_run()
-    subprocess.run([sys.executable, str(common.BENCH / "harness/make_report.py"), str(run_dir)],
-                   check=False)
+    if not a.no_report:
+        subprocess.run([sys.executable, str(common.BENCH / "harness/make_report.py"),
+                        str(run_dir)], check=False)
     print(f"done: {run_dir}")
 
 

@@ -234,7 +234,7 @@ def build(run_dir, wall_csv=None):
             "model": mk, "label": m.get("label"), "architecture": m.get("arch"),
             "params_billion": m.get("params_b"),
             "active_params_billion": m.get("active_params_b", m.get("params_b")),
-            "tag": m["tag"], "quantization": cfg["quantization"],
+            "tag": m["tag"], "quantization": m.get("quantization") or cfg["quantization"],
             "download_size_gb": r((pulled.get(mk, {}).get("size_bytes") or 0) / 1e9),
             "memory_loaded_gb": r(ps["size"] / 1e9) if ps.get("size") else
             "not recorded (run interrupted before saving)",
@@ -277,6 +277,18 @@ def build(run_dir, wall_csv=None):
     if cfg["server"]["mode"] != "docker":
         add("DEVIATION", "Not run in Docker", cfg["server"]["deviation_note"],
             "Same Ollama version as the pinned image; see the Server rows for exact values")
+    add("Protocol", "version", env.get("protocol_version", "pre-1.0"),
+        "bench/benchmark-protocol.md; results line up only within the same version")
+    if env.get("study"):
+        st = env["study"]
+        add("Protocol", "study", env.get("study_id", ""), st.get("notes", ""))
+        add("Protocol", "member", st.get("member", ""))
+        add("Protocol", "machine", st.get("machine", ""), st.get("hardware", ""))
+    add("Protocol", "QUANTIZATION (member's choice)", env.get("quantization") or cfg["quantization"],
+        "compare studies with different quantizations only with this in mind")
+    if env.get("protocol_deviations"):
+        add("Protocol", "DEVIATIONS", "; ".join(env["protocol_deviations"]),
+            "this run does not follow the protocol")
     add("Run", "run_id", env["run_id"])
     add("Run", "timestamp_utc", env["timestamp_utc"])
     add("Run", "total run time (min)", r(run.get("total_seconds", 0) / 60, 1))
@@ -389,11 +401,13 @@ def build(run_dir, wall_csv=None):
         c, n = num(x.get("client_decode_tps_n1_mean")), num(x.get("native_decode_tps"))
         x["client_vs_server_decode_pct"] = r(100 * (c - n) / n, 1) if c and n else None
 
+    timing = read_csv(run_dir / "timing.csv")
     sheets = [("Parameters", P), ("Models", models_sheet), ("Summary", summary),
-              ("Capacity", capacity), ("Scaling", scaling), ("Quality", quality),
+              ("Capacity", capacity), ("Scaling", scaling), ("Timing", timing),
+              ("Quality", quality),
               ("ServerTimingCheck", xcheck), ("Environment", environment),
               ("Requests", reqs), ("Power", power)]
-    sheets = [(n, rows) for n, rows in sheets if rows or n != "Quality"]
+    sheets = [(n, rows) for n, rows in sheets if rows or n not in ("Quality", "Timing")]
     out = run_dir / "report"
     out.mkdir(exist_ok=True)
     for name, rows in sheets:

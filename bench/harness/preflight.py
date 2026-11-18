@@ -64,7 +64,7 @@ def check(cfg, max_load=2.0, check_load=True):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--config", default=str(common.BENCH / "config/gemma4_ollama_native.json"))
+    ap.add_argument("--config", default=str(common.BENCH / "configs/TEMPLATE.json"))
     ap.add_argument("--out")
     a = ap.parse_args()
     rep = check(common.load_json(a.config))

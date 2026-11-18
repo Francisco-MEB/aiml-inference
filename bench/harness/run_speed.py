@@ -6,8 +6,9 @@ import threading
 import time
 
 import common
+import protocol
 
-REQ_FIELDS = ["run_id", "model_key", "model_tag", "prompt_id", "prompt_class", "concurrency",
+REQ_FIELDS = [*protocol.ROW_FIELDS, "run_id", "model_key", "model_tag", "prompt_id", "prompt_class", "concurrency",
               "rep", "req", "batch_start_unix", "batch_end_unix", "batch_wall_s", "batch_agg_tps",
               "req_start_unix", "ttft_s", "e2e_s", "prompt_tokens", "output_tokens", "decode_tps",
               "prefill_tps_est", "reasoning_chars", "content_chars", "finish_reason", "error"]
@@ -74,8 +75,15 @@ def unload(cfg, model):
     return False
 
 
-def run_model(cfg, model, prompts, run_id, req_writer, xcheck_writer, log=print):
+def run_model(cfg, model, prompts, run_id, req_writer, xcheck_writer, log=print, row_meta=None):
+    """row_meta: protocol columns written into every request row (see protocol.ROW_FIELDS).
+    sweep.level_cap_s, if set, stops starting new batches of a workload level after that long;
+    info["capped"] lists the levels that were cut short."""
     base, req, sweep = cfg["backend"]["base_url"], cfg["request"], cfg["sweep"]
+    if "extra_body" in model:          # per-model way to turn thinking off
+        req = dict(req, extra_body=model["extra_body"])
+    row_meta = row_meta or {}
+    cap_s = sweep.get("level_cap_s")
     is_ollama = cfg["backend"]["type"] == "ollama"
     info = {"key": model["key"], "tag": model["tag"]}
 
@@ -96,6 +104,9 @@ def run_model(cfg, model, prompts, run_id, req_writer, xcheck_writer, log=print)
             log(f"  loaded {m.get('name')} {m.get('size', 0) / 1e9:.1f} GB, "
                 f"{pct:.0f}% on GPU, ctx {m.get('context_length')}")
 
+    if is_ollama:
+        info["fits_gpu"] = all((m.get("size_vram") or 0) >= (m.get("size") or 1)
+                               for m in info["ps_after_load"]) and bool(info["ps_after_load"])
     if sweep.get("warmup_all_slots") and max(sweep["concurrency_levels"]) > 1:
         # Discarded: the first use of each parallel slot has a one-off cost.
         run_batch(base, model["tag"], prompts[0]["messages"], warm,
@@ -114,15 +125,20 @@ def run_model(cfg, model, prompts, run_id, req_writer, xcheck_writer, log=print)
                                         "error": r0[0]["error"]}
     log(f"  thinking check: {info['thinking_check']}")
 
-    rows = []
+    rows, info["capped"] = [], []
     for p in prompts:
         for n in sweep["concurrency_levels"]:
+            t_level = time.time()
             for rep in range(sweep["reps"]):
+                if cap_s and rep > 0 and time.time() - t_level > cap_s:
+                    info["capped"].append({"workload": p["id"], "users": n, "reps_done": rep})
+                    log(f"  {p['id']} N={n}: level time cap reached after {rep} batches")
+                    break
                 tag = common.nonce(run_id, model["key"], p["id"], n, rep)
                 res, t0u, t1u, wall, agg = run_batch(base, model["tag"], p["messages"], req, n,
                                                      tag)
                 for i, r in enumerate(res):
-                    row = {"run_id": run_id, "model_key": model["key"], "model_tag": model["tag"],
+                    row = {**row_meta, "run_id": run_id, "model_key": model["key"], "model_tag": model["tag"],
                            "prompt_id": p["id"], "prompt_class": p["class"], "concurrency": n,
                            "rep": rep, "req": i, "batch_start_unix": round(t0u, 3),
                            "batch_end_unix": round(t1u, 3), "batch_wall_s": wall,

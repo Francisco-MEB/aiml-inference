@@ -3,7 +3,7 @@
 # No sudo, nothing outside this directory is touched.
 set -euo pipefail
 BENCH="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CONFIG="${1:-$BENCH/config/gemma4_ollama_native.json}"
+CONFIG="${1:-$BENCH/configs/TEMPLATE.json}"
 read -r VER URL SHA < <(python3 - "$CONFIG" <<'PY'
 import json, sys
 s = json.load(open(sys.argv[1]))["server"]

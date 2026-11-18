@@ -1,3 +1,5 @@
+> **Historical.** This was `bench/gemma4/README.md` when the Gemma study ran. The harness has since moved to `bench/` and new studies follow `bench/benchmark-protocol.md`; paths below are the old ones.
+
 # Gemma 4 benchmark harness (Dell Pro Max GB10)
 
 Reproducible speed, concurrency, power and quality runs for the Gemma 4 QAT Q4_0 family.
