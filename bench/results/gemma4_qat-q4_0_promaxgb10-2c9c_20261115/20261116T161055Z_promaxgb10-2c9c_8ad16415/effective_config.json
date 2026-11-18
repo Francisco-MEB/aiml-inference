@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "name": "gemma4-qat-q4_0-ollama-native",
+  "notes": "Groundwork config for the Gemma 4 size sweep on a Dell Pro Max GB10. Pins verified 2026-11-15.",
+  "backend": {
+    "type": "ollama",
+    "base_url": "http://127.0.0.1:11435/v1",
+    "native_url": "http://127.0.0.1:11435"
+  },
+  "server": {
+    "mode": "native",
+    "deviation_note": "The club stack is Ollama in Docker. This run uses the SAME Ollama version as a native binary under a normal user account, because that user has no docker-group access and no sudo on this host.",
+    "ollama_version": "0.40.13",
+    "port": 11435,
+    "models_dir": "~/ollama-bench-models",
+    "native": {
+      "binary_path": "/usr/local/bin/ollama",
+      "binary_sha256": "81f230792fddb5202e2e8b13bdd8671da72e6a14f56f8c75e38fcab439ad2c5e",
+      "binary_note": "The host's installed Ollama 0.40.13, run as a normal user on a private port. Remove binary_path to use the release asset below via server/install_ollama_native.sh instead.",
+      "asset_url": "https://github.com/ollama/ollama/releases/download/v0.40.13/ollama-linux-arm64.tar.zst",
+      "asset_sha256": "913d9a28da6da86d551ce4ca531457767bb14d511cbc1d5ca93e9b3b8b9a8666"
+    },
+    "docker": {
+      "image": "ollama/ollama:0.40.13",
+      "index_digest": "sha256:b2f0122c476bc9fe7ce679d8bb4bd555351e25e2554eefb156f61cb0a89cf429",
+      "arm64_digest": "sha256:44236782466e814af687b3adc04b1b3e4b4288459fc9272e66e8671d11968f82",
+      "amd64_digest": "sha256:93c1376d651a9f1579ee40cc5763852f08b204466371e4bb64bca2a1d8d08e2d"
+    },
+    "env": {
+      "OLLAMA_NUM_PARALLEL": "8",
+      "OLLAMA_CONTEXT_LENGTH": "4096",
+      "OLLAMA_MAX_LOADED_MODELS": "1",
+      "OLLAMA_KEEP_ALIVE": "30m",
+      "OLLAMA_NO_CLOUD": "1"
+    },
+    "_binary_path": "/usr/local/bin/ollama"
+  },
+  "quantization": "Q4_0 (Google QAT checkpoints)",
+  "models": [
+    {
+      "key": "12b",
+      "label": "Gemma 4 12B",
+      "arch": "dense",
+      "params_b": 11.9,
+      "tag": "gemma4:12b-it-qat",
+      "manifest_sha256": "38044be4f923e5a55264ed7df4eaac2676651a905f735197c504045140c02bd3",
+      "model_blob_sha256": "faff1a63667fac17ac5e777f47114688fcefea96e220e211aaa8d62c2c4561f1",
+      "google_hf_repo": "google/gemma-4-12B-it-qat-q4_0-gguf",
+      "google_hf_gguf_sha256": "93567e57a8fe10b23569b9d9ec38cd005deedf71e29477c421a4b83f418a538b"
+    }
+  ],
+  "request": {
+    "temperature": 0,
+    "seed": 42,
+    "max_tokens": 256,
+    "thinking": "off",
+    "thinking_how": "reasoning_effort=none on /v1/chat/completions (think=false on the native API); the runner also records any reasoning text returned",
+    "extra_body": {
+      "reasoning_effort": "none"
+    },
+    "cache_busting": "each request's user message starts with a deterministic 8-hex nonce so the server's prompt cache cannot skip prefill",
+    "timeout_s": 900
+  },
+  "sweep": {
+    "concurrency_levels": [
+      8
+    ],
+    "reps": 5,
+    "warmup_max_tokens": 16,
+    "warmup_all_slots": true,
+    "idle_baseline_s": 10
+  },
+  "thresholds": {
+    "p95_ttft_s_max": 2.0,
+    "decode_tps_min": 10.0,
+    "decode_stat": "median",
+    "decode_stats": [
+      "median",
+      "mean",
+      "p05",
+      "min"
+    ],
+    "scenarios": [
+      {
+        "name": "interactive (pinned)",
+        "p95_ttft_s_max": 2.0,
+        "decode_tps_min": 10.0
+      },
+      {
+        "name": "relaxed",
+        "p95_ttft_s_max": 5.0,
+        "decode_tps_min": 5.0
+      },
+      {
+        "name": "strict",
+        "p95_ttft_s_max": 1.0,
+        "decode_tps_min": 20.0
+      }
+    ]
+  },
+  "run": {
+    "time_budget_hours": 4.5
+  },
+  "prompts": {
+    "path": "prompts/prompts_v1.jsonl",
+    "sha256": "5c7772860192c2ae65e360358407585aca613810ddfa05687ff67b5b7a8e199d"
+  },
+  "power": {
+    "interval_s": 1,
+    "source": "nvidia-smi power.draw (GPU only; unified memory and CPU are not included, so use the wall meter for system power)"
+  },
+  "quality": {
+    "enabled": false,
+    "tasks": [
+      "mmlu_pro_computer_science",
+      "humaneval_chat",
+      "gpqa_main_generative_n_shot"
+    ],
+    "gated_tasks": [
+      "gpqa_main_generative_n_shot"
+    ],
+    "code_exec_tasks": [
+      "humaneval_chat"
+    ],
+    "allow_code_execution": true,
+    "limit": null,
+    "num_concurrent": 4,
+    "gen_kwargs": "temperature=0,reasoning_effort=none",
+    "include_path": "lm_eval_tasks",
+    "server_env": {
+      "OLLAMA_NUM_PARALLEL": "4",
+      "OLLAMA_CONTEXT_LENGTH": "16384"
+    }
+  }
+}

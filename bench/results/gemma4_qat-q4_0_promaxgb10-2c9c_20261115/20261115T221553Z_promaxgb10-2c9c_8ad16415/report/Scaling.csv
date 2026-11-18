@@ -1,0 +1,10 @@
+prompt_class,metric,concurrent_users,31b
+short_chat,Aggregate output tok/s (all users together),8,79.14
+short_chat,Per-user decode tok/s (median request),8,10.33
+short_chat,p95 time to first token (s),8,1.336
+long_context_prefill,Aggregate output tok/s (all users together),8,23.34
+long_context_prefill,Per-user decode tok/s (median request),8,5.02
+long_context_prefill,p95 time to first token (s),8,56.778
+coding,Aggregate output tok/s (all users together),8,68.9
+coding,Per-user decode tok/s (median request),8,10.18
+coding,p95 time to first token (s),8,25.671

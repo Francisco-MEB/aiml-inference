@@ -1,0 +1,88 @@
+{
+  "run_id": "20261116T162725Z_promaxgb10-2c9c_8ad16415",
+  "phases": [
+    {
+      "phase": "idle_baseline",
+      "start_unix": 1794846445.627,
+      "end_unix": 1794846455.628,
+      "seconds": 10.0
+    },
+    {
+      "phase": "pull_verify",
+      "start_unix": 1794846459.694,
+      "end_unix": 1794846480.163,
+      "seconds": 20.5
+    },
+    {
+      "phase": "quality:31b",
+      "start_unix": 1794846484.758,
+      "end_unix": 1794846683.306,
+      "seconds": 198.5
+    }
+  ],
+  "models": [],
+  "quality": [
+    {
+      "model_key": "31b",
+      "model_tag": "gemma4:31b-it-qat",
+      "command": [
+        "/home/gdasilv2/GH/aiml-inference/.venv/bin/lm_eval",
+        "run",
+        "--model",
+        "local-chat-completions",
+        "--model_args",
+        "model=gemma4:31b-it-qat,base_url=http://127.0.0.1:11435/v1/chat/completions,num_concurrent=4,tokenized_requests=False,max_retries=3",
+        "--tasks",
+        "humaneval_chat",
+        "--apply_chat_template",
+        "--gen_kwargs",
+        "temperature=0,reasoning_effort=none",
+        "--seed",
+        "42",
+        "--output_path",
+        "/home/gdasilv2/GH/aiml-inference/bench/gemma4/results/20261116T162725Z_promaxgb10-2c9c_8ad16415/lm_eval/31b",
+        "--log_samples",
+        "--limit",
+        "40",
+        "--include_path",
+        "/home/gdasilv2/GH/aiml-inference/bench/gemma4/lm_eval_tasks",
+        "--confirm_run_unsafe_code"
+      ],
+      "limit": 40,
+      "tasks_requested": [
+        "humaneval_chat"
+      ],
+      "tasks_skipped": [],
+      "results": [
+        {
+          "task": "humaneval_chat",
+          "metric": "sample_len",
+          "value": 40,
+          "n": 40,
+          "stderr": null
+        },
+        {
+          "task": "humaneval_chat",
+          "metric": "pass@1,extract_code",
+          "value": 1.0,
+          "n": 40,
+          "stderr": 0.0
+        }
+      ],
+      "returncode": 0,
+      "server_env": {
+        "OLLAMA_NUM_PARALLEL": "4",
+        "OLLAMA_CONTEXT_LENGTH": "16384",
+        "OLLAMA_MAX_LOADED_MODELS": "1",
+        "OLLAMA_KEEP_ALIVE": "30m",
+        "OLLAMA_NO_CLOUD": "1",
+        "OLLAMA_BENCH_VERSION": "0.40.13",
+        "OLLAMA_BENCH_PORT": "11435",
+        "OLLAMA_MODELS": "/home/gdasilv2/ollama-bench-models",
+        "OLLAMA_BENCH_BIN": "/usr/local/bin/ollama"
+      }
+    }
+  ],
+  "models_skipped": [],
+  "total_seconds": 239
+}

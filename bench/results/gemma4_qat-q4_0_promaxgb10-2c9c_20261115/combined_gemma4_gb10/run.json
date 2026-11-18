@@ -1,0 +1,1923 @@
+{
+  "run_id": "combined_gemma4_gb10",
+  "phases": [
+    {
+      "phase": "idle_baseline",
+      "start_unix": 1794778560.762,
+      "end_unix": 1794778570.763,
+      "seconds": 10.0
+    }
+  ],
+  "models": [
+    {
+      "key": "e4b (slots=users)",
+      "tag": "gemma4:e4b-it-qat",
+      "load_plus_warmup_s": 5.92,
+      "ps_after_load": [
+        {
+          "name": "gemma4:e4b-it-qat",
+          "size": 5170884770,
+          "size_vram": 5170884770,
+          "context_length": 4096
+        }
+      ],
+      "thinking_check": {
+        "pinned_setting": {
+          "reasoning_chars": 0,
+          "content_chars": 258,
+          "error": ""
+        },
+        "server_default_no_setting": {
+          "reasoning_chars": 231,
+          "content_chars": 0,
+          "error": ""
+        },
+        "reasoning_effort_high": {
+          "reasoning_chars": 231,
+          "content_chars": 0,
+          "error": ""
+        }
+      },
+      "reasoning_chars_total": 0,
+      "errors": 0,
+      "unloaded": true,
+      "slots": "16",
+      "memory_by_slots": {
+        "1": 3113505258,
+        "2": 3336883403,
+        "4": 3462712523,
+        "8": 3714370763,
+        "16": 5170884770
+      }
+    },
+    {
+      "key": "12b (slots=users)",
+      "tag": "gemma4:12b-it-qat",
+      "load_plus_warmup_s": 6.34,
+      "ps_after_load": [
+        {
+          "name": "gemma4:12b-it-qat",
+          "size": 23660456835,
+          "size_vram": 23660456835,
+          "context_length": 4096
+        }
+      ],
+      "thinking_check": {
+        "pinned_setting": {
+          "reasoning_chars": 0,
+          "content_chars": 262,
+          "error": ""
+        },
+        "server_default_no_setting": {
+          "reasoning_chars": 219,
+          "content_chars": 0,
+          "error": ""
+        },
+        "reasoning_effort_high": {
+          "reasoning_chars": 223,
+          "content_chars": 0,
+          "error": ""
+        }
+      },
+      "reasoning_chars_total": 0,
+      "errors": 0,
+      "unloaded": true,
+      "slots": "16",
+      "memory_by_slots": {
+        "1": 7656492235,
+        "2": 8628029356,
+        "4": 9970206636,
+        "8": 12654561196,
+        "16": 23660456835
+      }
+    },
+    {
+      "key": "31b (slots=users)",
+      "tag": "gemma4:31b-it-qat",
+      "load_plus_warmup_s": 11.81,
+      "ps_after_load": [
+        {
+          "name": "gemma4:31b-it-qat",
+          "size": 58792607742,
+          "size_vram": 58792607742,
+          "context_length": 4096
+        }
+      ],
+      "thinking_check": {
+        "pinned_setting": {
+          "reasoning_chars": 0,
+          "content_chars": 252,
+          "error": ""
+        },
+        "server_default_no_setting": {
+          "reasoning_chars": 218,
+          "content_chars": 0,
+          "error": ""
+        },
+        "reasoning_effort_high": {
+          "reasoning_chars": 206,
+          "content_chars": 0,
+          "error": ""
+        }
+      },
+      "reasoning_chars_total": 0,
+      "errors": 0,
+      "unloaded": true,
+      "slots": "16",
+      "memory_by_slots": {
+        "1": 19233431878,
+        "2": 21513591847,
+        "4": 24869035047,
+        "8": 31579921447,
+        "16": 58792607742
+      }
+    },
+    {
+      "key": "26b-a4b (slots=users)",
+      "tag": "gemma4:26b-a4b-it-qat",
+      "load_plus_warmup_s": 7.54,
+      "ps_after_load": [
+        {
+          "name": "gemma4:26b-a4b-it-qat",
+          "size": 25277119854,
+          "size_vram": 25277119854,
+          "context_length": 4096
+        }
+      ],
+      "thinking_check": {
+        "pinned_setting": {
+          "reasoning_chars": 0,
+          "content_chars": 250,
+          "error": ""
+        },
+        "server_default_no_setting": {
+          "reasoning_chars": 242,
+          "content_chars": 0,
+          "error": ""
+        },
+        "reasoning_effort_high": {
+          "reasoning_chars": 229,
+          "content_chars": 0,
+          "error": ""
+        }
+      },
+      "reasoning_chars_total": 0,
+      "errors": 0,
+      "unloaded": true,
+      "slots": "16",
+      "memory_by_slots": {
+        "1": 15051857590,
+        "2": 15732939159,
+        "4": 16571799959,
+        "8": 18249521559,
+        "16": 25277119854
+      }
+    },
+    {
+      "tag": "gemma4:e4b-it-qat",
+      "key": "e4b (slots=16)",
+      "memory_by_slots": {}
+    },
+    {
+      "tag": "gemma4:12b-it-qat",
+      "key": "12b (slots=16)",
+      "memory_by_slots": {}
+    }
+  ],
+  "quality": [
+    {
+      "model_key": "e4b",
+      "model_tag": "gemma4:e4b-it-qat",
+      "command": [
+        "/home/gdasilv2/GH/aiml-inference/.venv/bin/lm_eval",
+        "run",
+        "--model",
+        "local-chat-completions",
+        "--model_args",
+        "model=gemma4:e4b-it-qat,base_url=http://127.0.0.1:11435/v1/chat/completions,num_concurrent=4,tokenized_requests=False,max_retries=3",
+        "--tasks",
+        "mmlu_pro",
+        "--apply_chat_template",
+        "--gen_kwargs",
+        "temperature=0,reasoning_effort=none",
+        "--seed",
+        "42",
+        "--output_path",
+        "/home/gdasilv2/GH/aiml-inference/bench/gemma4/results/20261115T230228Z_promaxgb10-2c9c_8ad16415/lm_eval/e4b",
+        "--log_samples",
+        "--limit",
+        "10",
+        "--include_path",
+        "/home/gdasilv2/GH/aiml-inference/bench/gemma4/lm_eval_tasks"
+      ],
+      "limit": 10,
+      "tasks_requested": [
+        "mmlu_pro"
+      ],
+      "tasks_skipped": [],
+      "results": [
+        {
+          "task": "mmlu_pro_biology",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_biology",
+          "metric": "exact_match,custom-extract",
+          "value": 0.9,
+          "n": 10,
+          "stderr": 0.09999999999999999
+        },
+        {
+          "task": "mmlu_pro_business",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_business",
+          "metric": "exact_match,custom-extract",
+          "value": 0.9,
+          "n": 10,
+          "stderr": 0.09999999999999999
+        },
+        {
+          "task": "mmlu_pro_chemistry",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_chemistry",
+          "metric": "exact_match,custom-extract",
+          "value": 0.8,
+          "n": 10,
+          "stderr": 0.13333333333333333
+        },
+        {
+          "task": "mmlu_pro_computer_science",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_computer_science",
+          "metric": "exact_match,custom-extract",
+          "value": 0.7,
+          "n": 10,
+          "stderr": 0.15275252316519466
+        },
+        {
+          "task": "mmlu_pro_economics",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_economics",
+          "metric": "exact_match,custom-extract",
+          "value": 0.7,
+          "n": 10,
+          "stderr": 0.15275252316519466
+        },
+        {
+          "task": "mmlu_pro_engineering",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_engineering",
+          "metric": "exact_match,custom-extract",
+          "value": 0.6,
+          "n": 10,
+          "stderr": 0.1632993161855452
+        },
+        {
+          "task": "mmlu_pro_health",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_health",
+          "metric": "exact_match,custom-extract",
+          "value": 0.9,
+          "n": 10,
+          "stderr": 0.09999999999999999
+        },
+        {
+          "task": "mmlu_pro_history",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_history",
+          "metric": "exact_match,custom-extract",
+          "value": 0.3,
+          "n": 10,
+          "stderr": 0.15275252316519464
+        },
+        {
+          "task": "mmlu_pro_law",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_law",
+          "metric": "exact_match,custom-extract",
+          "value": 0.3,
+          "n": 10,
+          "stderr": 0.15275252316519464
+        },
+        {
+          "task": "mmlu_pro_math",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_math",
+          "metric": "exact_match,custom-extract",
+          "value": 0.7,
+          "n": 10,
+          "stderr": 0.15275252316519466
+        },
+        {
+          "task": "mmlu_pro_other",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_other",
+          "metric": "exact_match,custom-extract",
+          "value": 0.7,
+          "n": 10,
+          "stderr": 0.15275252316519466
+        },
+        {
+          "task": "mmlu_pro_philosophy",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_philosophy",
+          "metric": "exact_match,custom-extract",
+          "value": 0.7,
+          "n": 10,
+          "stderr": 0.15275252316519466
+        },
+        {
+          "task": "mmlu_pro_physics",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_physics",
+          "metric": "exact_match,custom-extract",
+          "value": 0.6,
+          "n": 10,
+          "stderr": 0.16329931618554522
+        },
+        {
+          "task": "mmlu_pro_psychology",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_psychology",
+          "metric": "exact_match,custom-extract",
+          "value": 0.6,
+          "n": 10,
+          "stderr": 0.16329931618554522
+        },
+        {
+          "task": "mmlu_pro",
+          "metric": "sample_len",
+          "value": 140,
+          "n": null,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro",
+          "metric": "exact_match,custom-extract",
+          "value": 0.6714285714285714,
+          "n": null,
+          "stderr": 0.038539081086282484
+        }
+      ],
+      "returncode": 0,
+      "server_env": {
+        "OLLAMA_NUM_PARALLEL": "4",
+        "OLLAMA_CONTEXT_LENGTH": "16384",
+        "OLLAMA_MAX_LOADED_MODELS": "1",
+        "OLLAMA_KEEP_ALIVE": "30m",
+        "OLLAMA_NO_CLOUD": "1",
+        "OLLAMA_BENCH_VERSION": "0.40.13",
+        "OLLAMA_BENCH_PORT": "11435",
+        "OLLAMA_MODELS": "/home/gdasilv2/ollama-bench-models",
+        "OLLAMA_BENCH_BIN": "/usr/local/bin/ollama"
+      }
+    },
+    {
+      "model_key": "e4b",
+      "model_tag": "gemma4:e4b-it-qat",
+      "command": [
+        "/home/gdasilv2/GH/aiml-inference/.venv/bin/lm_eval",
+        "run",
+        "--model",
+        "local-chat-completions",
+        "--model_args",
+        "model=gemma4:e4b-it-qat,base_url=http://127.0.0.1:11435/v1/chat/completions,num_concurrent=4,tokenized_requests=False,max_retries=3",
+        "--tasks",
+        "humaneval_chat",
+        "--apply_chat_template",
+        "--gen_kwargs",
+        "temperature=0,reasoning_effort=none",
+        "--seed",
+        "42",
+        "--output_path",
+        "/home/gdasilv2/GH/aiml-inference/bench/gemma4/results/20261115T231104Z_promaxgb10-2c9c_8ad16415/lm_eval/e4b",
+        "--log_samples",
+        "--limit",
+        "40",
+        "--include_path",
+        "/home/gdasilv2/GH/aiml-inference/bench/gemma4/lm_eval_tasks",
+        "--confirm_run_unsafe_code"
+      ],
+      "limit": 40,
+      "tasks_requested": [
+        "humaneval_chat"
+      ],
+      "tasks_skipped": [],
+      "results": [
+        {
+          "task": "humaneval_chat",
+          "metric": "sample_len",
+          "value": 40,
+          "n": 40,
+          "stderr": null
+        },
+        {
+          "task": "humaneval_chat",
+          "metric": "pass@1,extract_code",
+          "value": 0.95,
+          "n": 40,
+          "stderr": 0.03489912202260564
+        }
+      ],
+      "returncode": 0,
+      "server_env": {
+        "OLLAMA_NUM_PARALLEL": "4",
+        "OLLAMA_CONTEXT_LENGTH": "16384",
+        "OLLAMA_MAX_LOADED_MODELS": "1",
+        "OLLAMA_KEEP_ALIVE": "30m",
+        "OLLAMA_NO_CLOUD": "1",
+        "OLLAMA_BENCH_VERSION": "0.40.13",
+        "OLLAMA_BENCH_PORT": "11435",
+        "OLLAMA_MODELS": "/home/gdasilv2/ollama-bench-models",
+        "OLLAMA_BENCH_BIN": "/usr/local/bin/ollama"
+      }
+    },
+    {
+      "model_key": "12b",
+      "model_tag": "gemma4:12b-it-qat",
+      "command": [
+        "/home/gdasilv2/GH/aiml-inference/.venv/bin/lm_eval",
+        "run",
+        "--model",
+        "local-chat-completions",
+        "--model_args",
+        "model=gemma4:12b-it-qat,base_url=http://127.0.0.1:11435/v1/chat/completions,num_concurrent=4,tokenized_requests=False,max_retries=3",
+        "--tasks",
+        "mmlu_pro",
+        "--apply_chat_template",
+        "--gen_kwargs",
+        "temperature=0,reasoning_effort=none",
+        "--seed",
+        "42",
+        "--output_path",
+        "/home/gdasilv2/GH/aiml-inference/bench/gemma4/results/20261115T231223Z_promaxgb10-2c9c_8ad16415/lm_eval/12b",
+        "--log_samples",
+        "--limit",
+        "10",
+        "--include_path",
+        "/home/gdasilv2/GH/aiml-inference/bench/gemma4/lm_eval_tasks"
+      ],
+      "limit": 10,
+      "tasks_requested": [
+        "mmlu_pro"
+      ],
+      "tasks_skipped": [],
+      "results": [
+        {
+          "task": "mmlu_pro_biology",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_biology",
+          "metric": "exact_match,custom-extract",
+          "value": 0.9,
+          "n": 10,
+          "stderr": 0.09999999999999999
+        },
+        {
+          "task": "mmlu_pro_business",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_business",
+          "metric": "exact_match,custom-extract",
+          "value": 0.8,
+          "n": 10,
+          "stderr": 0.13333333333333333
+        },
+        {
+          "task": "mmlu_pro_chemistry",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_chemistry",
+          "metric": "exact_match,custom-extract",
+          "value": 0.7,
+          "n": 10,
+          "stderr": 0.15275252316519464
+        },
+        {
+          "task": "mmlu_pro_computer_science",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_computer_science",
+          "metric": "exact_match,custom-extract",
+          "value": 0.8,
+          "n": 10,
+          "stderr": 0.13333333333333333
+        },
+        {
+          "task": "mmlu_pro_economics",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_economics",
+          "metric": "exact_match,custom-extract",
+          "value": 0.8,
+          "n": 10,
+          "stderr": 0.13333333333333333
+        },
+        {
+          "task": "mmlu_pro_engineering",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_engineering",
+          "metric": "exact_match,custom-extract",
+          "value": 0.6,
+          "n": 10,
+          "stderr": 0.1632993161855452
+        },
+        {
+          "task": "mmlu_pro_health",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_health",
+          "metric": "exact_match,custom-extract",
+          "value": 0.7,
+          "n": 10,
+          "stderr": 0.15275252316519466
+        },
+        {
+          "task": "mmlu_pro_history",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_history",
+          "metric": "exact_match,custom-extract",
+          "value": 0.6,
+          "n": 10,
+          "stderr": 0.16329931618554522
+        },
+        {
+          "task": "mmlu_pro_law",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_law",
+          "metric": "exact_match,custom-extract",
+          "value": 0.5,
+          "n": 10,
+          "stderr": 0.16666666666666666
+        },
+        {
+          "task": "mmlu_pro_math",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_math",
+          "metric": "exact_match,custom-extract",
+          "value": 0.9,
+          "n": 10,
+          "stderr": 0.09999999999999999
+        },
+        {
+          "task": "mmlu_pro_other",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_other",
+          "metric": "exact_match,custom-extract",
+          "value": 0.5,
+          "n": 10,
+          "stderr": 0.16666666666666666
+        },
+        {
+          "task": "mmlu_pro_philosophy",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_philosophy",
+          "metric": "exact_match,custom-extract",
+          "value": 0.7,
+          "n": 10,
+          "stderr": 0.15275252316519466
+        },
+        {
+          "task": "mmlu_pro_physics",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_physics",
+          "metric": "exact_match,custom-extract",
+          "value": 0.8,
+          "n": 10,
+          "stderr": 0.13333333333333333
+        },
+        {
+          "task": "mmlu_pro_psychology",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_psychology",
+          "metric": "exact_match,custom-extract",
+          "value": 0.8,
+          "n": 10,
+          "stderr": 0.13333333333333333
+        },
+        {
+          "task": "mmlu_pro",
+          "metric": "sample_len",
+          "value": 140,
+          "n": null,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro",
+          "metric": "exact_match,custom-extract",
+          "value": 0.7214285714285714,
+          "n": null,
+          "stderr": 0.03831780223674067
+        }
+      ],
+      "returncode": 0,
+      "server_env": {
+        "OLLAMA_NUM_PARALLEL": "4",
+        "OLLAMA_CONTEXT_LENGTH": "16384",
+        "OLLAMA_MAX_LOADED_MODELS": "1",
+        "OLLAMA_KEEP_ALIVE": "30m",
+        "OLLAMA_NO_CLOUD": "1",
+        "OLLAMA_BENCH_VERSION": "0.40.13",
+        "OLLAMA_BENCH_PORT": "11435",
+        "OLLAMA_MODELS": "/home/gdasilv2/ollama-bench-models",
+        "OLLAMA_BENCH_BIN": "/usr/local/bin/ollama"
+      }
+    },
+    {
+      "model_key": "12b",
+      "model_tag": "gemma4:12b-it-qat",
+      "command": [
+        "/home/gdasilv2/GH/aiml-inference/.venv/bin/lm_eval",
+        "run",
+        "--model",
+        "local-chat-completions",
+        "--model_args",
+        "model=gemma4:12b-it-qat,base_url=http://127.0.0.1:11435/v1/chat/completions,num_concurrent=4,tokenized_requests=False,max_retries=3",
+        "--tasks",
+        "humaneval_chat",
+        "--apply_chat_template",
+        "--gen_kwargs",
+        "temperature=0,reasoning_effort=none",
+        "--seed",
+        "42",
+        "--output_path",
+        "/home/gdasilv2/GH/aiml-inference/bench/gemma4/results/20261115T232823Z_promaxgb10-2c9c_8ad16415/lm_eval/12b",
+        "--log_samples",
+        "--limit",
+        "40",
+        "--include_path",
+        "/home/gdasilv2/GH/aiml-inference/bench/gemma4/lm_eval_tasks",
+        "--confirm_run_unsafe_code"
+      ],
+      "limit": 40,
+      "tasks_requested": [
+        "humaneval_chat"
+      ],
+      "tasks_skipped": [],
+      "results": [
+        {
+          "task": "humaneval_chat",
+          "metric": "sample_len",
+          "value": 40,
+          "n": 40,
+          "stderr": null
+        },
+        {
+          "task": "humaneval_chat",
+          "metric": "pass@1,extract_code",
+          "value": 0.975,
+          "n": 40,
+          "stderr": 0.024999999999999998
+        }
+      ],
+      "returncode": 0,
+      "server_env": {
+        "OLLAMA_NUM_PARALLEL": "4",
+        "OLLAMA_CONTEXT_LENGTH": "16384",
+        "OLLAMA_MAX_LOADED_MODELS": "1",
+        "OLLAMA_KEEP_ALIVE": "30m",
+        "OLLAMA_NO_CLOUD": "1",
+        "OLLAMA_BENCH_VERSION": "0.40.13",
+        "OLLAMA_BENCH_PORT": "11435",
+        "OLLAMA_MODELS": "/home/gdasilv2/ollama-bench-models",
+        "OLLAMA_BENCH_BIN": "/usr/local/bin/ollama"
+      }
+    },
+    {
+      "model_key": "26b-a4b",
+      "model_tag": "gemma4:26b-a4b-it-qat",
+      "command": [
+        "/home/gdasilv2/GH/aiml-inference/.venv/bin/lm_eval",
+        "run",
+        "--model",
+        "local-chat-completions",
+        "--model_args",
+        "model=gemma4:26b-a4b-it-qat,base_url=http://127.0.0.1:11435/v1/chat/completions,num_concurrent=4,tokenized_requests=False,max_retries=3",
+        "--tasks",
+        "mmlu_pro",
+        "--apply_chat_template",
+        "--gen_kwargs",
+        "temperature=0,reasoning_effort=none",
+        "--seed",
+        "42",
+        "--output_path",
+        "/home/gdasilv2/GH/aiml-inference/bench/gemma4/results/20261115T233016Z_promaxgb10-2c9c_8ad16415/lm_eval/26b-a4b",
+        "--log_samples",
+        "--limit",
+        "10",
+        "--include_path",
+        "/home/gdasilv2/GH/aiml-inference/bench/gemma4/lm_eval_tasks"
+      ],
+      "limit": 10,
+      "tasks_requested": [
+        "mmlu_pro"
+      ],
+      "tasks_skipped": [],
+      "results": [
+        {
+          "task": "mmlu_pro_biology",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_biology",
+          "metric": "exact_match,custom-extract",
+          "value": 0.9,
+          "n": 10,
+          "stderr": 0.09999999999999999
+        },
+        {
+          "task": "mmlu_pro_business",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_business",
+          "metric": "exact_match,custom-extract",
+          "value": 0.9,
+          "n": 10,
+          "stderr": 0.09999999999999999
+        },
+        {
+          "task": "mmlu_pro_chemistry",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_chemistry",
+          "metric": "exact_match,custom-extract",
+          "value": 0.9,
+          "n": 10,
+          "stderr": 0.09999999999999999
+        },
+        {
+          "task": "mmlu_pro_computer_science",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_computer_science",
+          "metric": "exact_match,custom-extract",
+          "value": 0.8,
+          "n": 10,
+          "stderr": 0.13333333333333333
+        },
+        {
+          "task": "mmlu_pro_economics",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_economics",
+          "metric": "exact_match,custom-extract",
+          "value": 0.9,
+          "n": 10,
+          "stderr": 0.09999999999999999
+        },
+        {
+          "task": "mmlu_pro_engineering",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_engineering",
+          "metric": "exact_match,custom-extract",
+          "value": 0.8,
+          "n": 10,
+          "stderr": 0.13333333333333333
+        },
+        {
+          "task": "mmlu_pro_health",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_health",
+          "metric": "exact_match,custom-extract",
+          "value": 0.9,
+          "n": 10,
+          "stderr": 0.09999999999999999
+        },
+        {
+          "task": "mmlu_pro_history",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_history",
+          "metric": "exact_match,custom-extract",
+          "value": 0.7,
+          "n": 10,
+          "stderr": 0.15275252316519466
+        },
+        {
+          "task": "mmlu_pro_law",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_law",
+          "metric": "exact_match,custom-extract",
+          "value": 0.6,
+          "n": 10,
+          "stderr": 0.16329931618554522
+        },
+        {
+          "task": "mmlu_pro_math",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_math",
+          "metric": "exact_match,custom-extract",
+          "value": 0.9,
+          "n": 10,
+          "stderr": 0.09999999999999999
+        },
+        {
+          "task": "mmlu_pro_other",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_other",
+          "metric": "exact_match,custom-extract",
+          "value": 0.7,
+          "n": 10,
+          "stderr": 0.15275252316519466
+        },
+        {
+          "task": "mmlu_pro_philosophy",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_philosophy",
+          "metric": "exact_match,custom-extract",
+          "value": 0.8,
+          "n": 10,
+          "stderr": 0.13333333333333333
+        },
+        {
+          "task": "mmlu_pro_physics",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_physics",
+          "metric": "exact_match,custom-extract",
+          "value": 0.9,
+          "n": 10,
+          "stderr": 0.09999999999999999
+        },
+        {
+          "task": "mmlu_pro_psychology",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_psychology",
+          "metric": "exact_match,custom-extract",
+          "value": 0.9,
+          "n": 10,
+          "stderr": 0.09999999999999999
+        },
+        {
+          "task": "mmlu_pro",
+          "metric": "sample_len",
+          "value": 140,
+          "n": null,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro",
+          "metric": "exact_match,custom-extract",
+          "value": 0.8285714285714286,
+          "n": null,
+          "stderr": 0.03247186118329966
+        }
+      ],
+      "returncode": 0,
+      "server_env": {
+        "OLLAMA_NUM_PARALLEL": "4",
+        "OLLAMA_CONTEXT_LENGTH": "16384",
+        "OLLAMA_MAX_LOADED_MODELS": "1",
+        "OLLAMA_KEEP_ALIVE": "30m",
+        "OLLAMA_NO_CLOUD": "1",
+        "OLLAMA_BENCH_VERSION": "0.40.13",
+        "OLLAMA_BENCH_PORT": "11435",
+        "OLLAMA_MODELS": "/home/gdasilv2/ollama-bench-models",
+        "OLLAMA_BENCH_BIN": "/usr/local/bin/ollama"
+      }
+    },
+    {
+      "model_key": "26b-a4b",
+      "model_tag": "gemma4:26b-a4b-it-qat",
+      "command": [
+        "/home/gdasilv2/GH/aiml-inference/.venv/bin/lm_eval",
+        "run",
+        "--model",
+        "local-chat-completions",
+        "--model_args",
+        "model=gemma4:26b-a4b-it-qat,base_url=http://127.0.0.1:11435/v1/chat/completions,num_concurrent=4,tokenized_requests=False,max_retries=3",
+        "--tasks",
+        "humaneval_chat",
+        "--apply_chat_template",
+        "--gen_kwargs",
+        "temperature=0,reasoning_effort=none",
+        "--seed",
+        "42",
+        "--output_path",
+        "/home/gdasilv2/GH/aiml-inference/bench/gemma4/results/20261115T234212Z_promaxgb10-2c9c_8ad16415/lm_eval/26b-a4b",
+        "--log_samples",
+        "--limit",
+        "40",
+        "--include_path",
+        "/home/gdasilv2/GH/aiml-inference/bench/gemma4/lm_eval_tasks",
+        "--confirm_run_unsafe_code"
+      ],
+      "limit": 40,
+      "tasks_requested": [
+        "humaneval_chat"
+      ],
+      "tasks_skipped": [],
+      "results": [
+        {
+          "task": "humaneval_chat",
+          "metric": "sample_len",
+          "value": 40,
+          "n": 40,
+          "stderr": null
+        },
+        {
+          "task": "humaneval_chat",
+          "metric": "pass@1,extract_code",
+          "value": 1.0,
+          "n": 40,
+          "stderr": 0.0
+        }
+      ],
+      "returncode": 0,
+      "server_env": {
+        "OLLAMA_NUM_PARALLEL": "4",
+        "OLLAMA_CONTEXT_LENGTH": "16384",
+        "OLLAMA_MAX_LOADED_MODELS": "1",
+        "OLLAMA_KEEP_ALIVE": "30m",
+        "OLLAMA_NO_CLOUD": "1",
+        "OLLAMA_BENCH_VERSION": "0.40.13",
+        "OLLAMA_BENCH_PORT": "11435",
+        "OLLAMA_MODELS": "/home/gdasilv2/ollama-bench-models",
+        "OLLAMA_BENCH_BIN": "/usr/local/bin/ollama"
+      }
+    },
+    {
+      "model_key": "31b",
+      "model_tag": "gemma4:31b-it-qat",
+      "command": [
+        "/home/gdasilv2/GH/aiml-inference/.venv/bin/lm_eval",
+        "run",
+        "--model",
+        "local-chat-completions",
+        "--model_args",
+        "model=gemma4:31b-it-qat,base_url=http://127.0.0.1:11435/v1/chat/completions,num_concurrent=4,tokenized_requests=False,max_retries=3",
+        "--tasks",
+        "mmlu_pro",
+        "--apply_chat_template",
+        "--gen_kwargs",
+        "temperature=0,reasoning_effort=none",
+        "--seed",
+        "42",
+        "--output_path",
+        "/home/gdasilv2/GH/aiml-inference/bench/gemma4/results/20261115T234343Z_promaxgb10-2c9c_8ad16415/lm_eval/31b",
+        "--log_samples",
+        "--limit",
+        "10",
+        "--include_path",
+        "/home/gdasilv2/GH/aiml-inference/bench/gemma4/lm_eval_tasks"
+      ],
+      "limit": 10,
+      "tasks_requested": [
+        "mmlu_pro"
+      ],
+      "tasks_skipped": [],
+      "results": [
+        {
+          "task": "mmlu_pro_biology",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_biology",
+          "metric": "exact_match,custom-extract",
+          "value": 0.9,
+          "n": 10,
+          "stderr": 0.09999999999999999
+        },
+        {
+          "task": "mmlu_pro_business",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_business",
+          "metric": "exact_match,custom-extract",
+          "value": 0.9,
+          "n": 10,
+          "stderr": 0.09999999999999999
+        },
+        {
+          "task": "mmlu_pro_chemistry",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_chemistry",
+          "metric": "exact_match,custom-extract",
+          "value": 1.0,
+          "n": 10,
+          "stderr": 0.0
+        },
+        {
+          "task": "mmlu_pro_computer_science",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_computer_science",
+          "metric": "exact_match,custom-extract",
+          "value": 0.9,
+          "n": 10,
+          "stderr": 0.09999999999999999
+        },
+        {
+          "task": "mmlu_pro_economics",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_economics",
+          "metric": "exact_match,custom-extract",
+          "value": 0.9,
+          "n": 10,
+          "stderr": 0.09999999999999999
+        },
+        {
+          "task": "mmlu_pro_engineering",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_engineering",
+          "metric": "exact_match,custom-extract",
+          "value": 0.9,
+          "n": 10,
+          "stderr": 0.09999999999999999
+        },
+        {
+          "task": "mmlu_pro_health",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_health",
+          "metric": "exact_match,custom-extract",
+          "value": 1.0,
+          "n": 10,
+          "stderr": 0.0
+        },
+        {
+          "task": "mmlu_pro_history",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_history",
+          "metric": "exact_match,custom-extract",
+          "value": 0.8,
+          "n": 10,
+          "stderr": 0.13333333333333333
+        },
+        {
+          "task": "mmlu_pro_law",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_law",
+          "metric": "exact_match,custom-extract",
+          "value": 0.7,
+          "n": 10,
+          "stderr": 0.15275252316519466
+        },
+        {
+          "task": "mmlu_pro_math",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_math",
+          "metric": "exact_match,custom-extract",
+          "value": 0.9,
+          "n": 10,
+          "stderr": 0.09999999999999999
+        },
+        {
+          "task": "mmlu_pro_other",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_other",
+          "metric": "exact_match,custom-extract",
+          "value": 0.7,
+          "n": 10,
+          "stderr": 0.15275252316519466
+        },
+        {
+          "task": "mmlu_pro_philosophy",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_philosophy",
+          "metric": "exact_match,custom-extract",
+          "value": 0.9,
+          "n": 10,
+          "stderr": 0.09999999999999999
+        },
+        {
+          "task": "mmlu_pro_physics",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_physics",
+          "metric": "exact_match,custom-extract",
+          "value": 1.0,
+          "n": 10,
+          "stderr": 0.0
+        },
+        {
+          "task": "mmlu_pro_psychology",
+          "metric": "sample_len",
+          "value": 10,
+          "n": 10,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_psychology",
+          "metric": "exact_match,custom-extract",
+          "value": 1.0,
+          "n": 10,
+          "stderr": 0.0
+        },
+        {
+          "task": "mmlu_pro",
+          "metric": "sample_len",
+          "value": 140,
+          "n": null,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro",
+          "metric": "exact_match,custom-extract",
+          "value": 0.8928571428571429,
+          "n": null,
+          "stderr": 0.026190476190476188
+        }
+      ],
+      "returncode": 0,
+      "server_env": {
+        "OLLAMA_NUM_PARALLEL": "4",
+        "OLLAMA_CONTEXT_LENGTH": "16384",
+        "OLLAMA_MAX_LOADED_MODELS": "1",
+        "OLLAMA_KEEP_ALIVE": "30m",
+        "OLLAMA_NO_CLOUD": "1",
+        "OLLAMA_BENCH_VERSION": "0.40.13",
+        "OLLAMA_BENCH_PORT": "11435",
+        "OLLAMA_MODELS": "/home/gdasilv2/ollama-bench-models",
+        "OLLAMA_BENCH_BIN": "/usr/local/bin/ollama"
+      }
+    },
+    {
+      "model_key": "31b",
+      "model_tag": "gemma4:31b-it-qat",
+      "command": [
+        "/home/gdasilv2/GH/aiml-inference/.venv/bin/lm_eval",
+        "run",
+        "--model",
+        "local-chat-completions",
+        "--model_args",
+        "model=gemma4:31b-it-qat,base_url=http://127.0.0.1:11435/v1/chat/completions,num_concurrent=4,tokenized_requests=False,max_retries=3",
+        "--tasks",
+        "humaneval_chat",
+        "--apply_chat_template",
+        "--gen_kwargs",
+        "temperature=0,reasoning_effort=none",
+        "--seed",
+        "42",
+        "--output_path",
+        "/home/gdasilv2/GH/aiml-inference/bench/gemma4/results/20261116T162725Z_promaxgb10-2c9c_8ad16415/lm_eval/31b",
+        "--log_samples",
+        "--limit",
+        "40",
+        "--include_path",
+        "/home/gdasilv2/GH/aiml-inference/bench/gemma4/lm_eval_tasks",
+        "--confirm_run_unsafe_code"
+      ],
+      "limit": 40,
+      "tasks_requested": [
+        "humaneval_chat"
+      ],
+      "tasks_skipped": [],
+      "results": [
+        {
+          "task": "humaneval_chat",
+          "metric": "sample_len",
+          "value": 40,
+          "n": 40,
+          "stderr": null
+        },
+        {
+          "task": "humaneval_chat",
+          "metric": "pass@1,extract_code",
+          "value": 1.0,
+          "n": 40,
+          "stderr": 0.0
+        }
+      ],
+      "returncode": 0,
+      "server_env": {
+        "OLLAMA_NUM_PARALLEL": "4",
+        "OLLAMA_CONTEXT_LENGTH": "16384",
+        "OLLAMA_MAX_LOADED_MODELS": "1",
+        "OLLAMA_KEEP_ALIVE": "30m",
+        "OLLAMA_NO_CLOUD": "1",
+        "OLLAMA_BENCH_VERSION": "0.40.13",
+        "OLLAMA_BENCH_PORT": "11435",
+        "OLLAMA_MODELS": "/home/gdasilv2/ollama-bench-models",
+        "OLLAMA_BENCH_BIN": "/usr/local/bin/ollama"
+      }
+    }
+  ],
+  "models_skipped": [],
+  "total_seconds": 16589,
+  "merged_from": [
+    {
+      "variant": "e4b (slots=users)",
+      "run_id": "20261115T213600Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "1",
+      "levels": [
+        1
+      ],
+      "requests": 15,
+      "git_commit": "d8505d9fc3369d87a05bf68bf21a25c595d026e2",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "concurrency_levels": [
+          1
+        ],
+        "OLLAMA_NUM_PARALLEL": "1",
+        "models": [
+          "e4b"
+        ]
+      },
+      "complete_run": true
+    },
+    {
+      "variant": "e4b (slots=users)",
+      "run_id": "20261115T213834Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "2",
+      "levels": [
+        2
+      ],
+      "requests": 30,
+      "git_commit": "d8505d9fc3369d87a05bf68bf21a25c595d026e2",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "concurrency_levels": [
+          2
+        ],
+        "OLLAMA_NUM_PARALLEL": "2",
+        "models": [
+          "e4b"
+        ]
+      },
+      "complete_run": true
+    },
+    {
+      "variant": "e4b (slots=users)",
+      "run_id": "20261115T214023Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "4",
+      "levels": [
+        4
+      ],
+      "requests": 60,
+      "git_commit": "d8505d9fc3369d87a05bf68bf21a25c595d026e2",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "concurrency_levels": [
+          4
+        ],
+        "OLLAMA_NUM_PARALLEL": "4",
+        "models": [
+          "e4b"
+        ]
+      },
+      "complete_run": true
+    },
+    {
+      "variant": "e4b (slots=users)",
+      "run_id": "20261115T214226Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "8",
+      "levels": [
+        8
+      ],
+      "requests": 120,
+      "git_commit": "d8505d9fc3369d87a05bf68bf21a25c595d026e2",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "concurrency_levels": [
+          8
+        ],
+        "OLLAMA_NUM_PARALLEL": "8",
+        "models": [
+          "e4b"
+        ]
+      },
+      "complete_run": true
+    },
+    {
+      "variant": "e4b (slots=users)",
+      "run_id": "20261115T214459Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "16",
+      "levels": [
+        16
+      ],
+      "requests": 240,
+      "git_commit": "d8505d9fc3369d87a05bf68bf21a25c595d026e2",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "concurrency_levels": [
+          16
+        ],
+        "OLLAMA_NUM_PARALLEL": "16",
+        "models": [
+          "e4b"
+        ]
+      },
+      "complete_run": true
+    },
+    {
+      "variant": "12b (slots=users)",
+      "run_id": "20261116T155943Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "1",
+      "levels": [
+        1
+      ],
+      "requests": 15,
+      "git_commit": "3b84451719d04925290dd6e1321649c7957c63eb",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "concurrency_levels": [
+          1
+        ],
+        "OLLAMA_NUM_PARALLEL": "1",
+        "models": [
+          "12b"
+        ]
+      },
+      "complete_run": true
+    },
+    {
+      "variant": "12b (slots=users)",
+      "run_id": "20261116T160302Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "2",
+      "levels": [
+        2
+      ],
+      "requests": 30,
+      "git_commit": "3b84451719d04925290dd6e1321649c7957c63eb",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "concurrency_levels": [
+          2
+        ],
+        "OLLAMA_NUM_PARALLEL": "2",
+        "models": [
+          "12b"
+        ]
+      },
+      "complete_run": true
+    },
+    {
+      "variant": "12b (slots=users)",
+      "run_id": "20261116T160640Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "4",
+      "levels": [
+        4
+      ],
+      "requests": 60,
+      "git_commit": "3b84451719d04925290dd6e1321649c7957c63eb",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "concurrency_levels": [
+          4
+        ],
+        "OLLAMA_NUM_PARALLEL": "4",
+        "models": [
+          "12b"
+        ]
+      },
+      "complete_run": true
+    },
+    {
+      "variant": "12b (slots=users)",
+      "run_id": "20261116T161055Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "8",
+      "levels": [
+        8
+      ],
+      "requests": 120,
+      "git_commit": "3b84451719d04925290dd6e1321649c7957c63eb",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "concurrency_levels": [
+          8
+        ],
+        "OLLAMA_NUM_PARALLEL": "8",
+        "models": [
+          "12b"
+        ]
+      },
+      "complete_run": true
+    },
+    {
+      "variant": "12b (slots=users)",
+      "run_id": "20261116T161622Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "16",
+      "levels": [
+        16
+      ],
+      "requests": 240,
+      "git_commit": "3b84451719d04925290dd6e1321649c7957c63eb",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "concurrency_levels": [
+          16
+        ],
+        "OLLAMA_NUM_PARALLEL": "16",
+        "models": [
+          "12b"
+        ]
+      },
+      "complete_run": true
+    },
+    {
+      "variant": "31b (slots=users)",
+      "run_id": "20261115T214922Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "1",
+      "levels": [
+        1
+      ],
+      "requests": 15,
+      "git_commit": "6223975a28031c2024bff756c19a3c9743e6e645",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "concurrency_levels": [
+          1
+        ],
+        "OLLAMA_NUM_PARALLEL": "1",
+        "models": [
+          "31b"
+        ]
+      },
+      "complete_run": true
+    },
+    {
+      "variant": "31b (slots=users)",
+      "run_id": "20261115T215715Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "2",
+      "levels": [
+        2
+      ],
+      "requests": 30,
+      "git_commit": "6223975a28031c2024bff756c19a3c9743e6e645",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "concurrency_levels": [
+          2
+        ],
+        "OLLAMA_NUM_PARALLEL": "2",
+        "models": [
+          "31b"
+        ]
+      },
+      "complete_run": true
+    },
+    {
+      "variant": "31b (slots=users)",
+      "run_id": "20261115T220553Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "4",
+      "levels": [
+        4
+      ],
+      "requests": 60,
+      "git_commit": "6223975a28031c2024bff756c19a3c9743e6e645",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "concurrency_levels": [
+          4
+        ],
+        "OLLAMA_NUM_PARALLEL": "4",
+        "models": [
+          "31b"
+        ]
+      },
+      "complete_run": true
+    },
+    {
+      "variant": "31b (slots=users)",
+      "run_id": "20261115T221553Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "8",
+      "levels": [
+        8
+      ],
+      "requests": 120,
+      "git_commit": "6223975a28031c2024bff756c19a3c9743e6e645",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "concurrency_levels": [
+          8
+        ],
+        "OLLAMA_NUM_PARALLEL": "8",
+        "models": [
+          "31b"
+        ]
+      },
+      "complete_run": true
+    },
+    {
+      "variant": "31b (slots=users)",
+      "run_id": "20261115T223009Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "16",
+      "levels": [
+        16
+      ],
+      "requests": 240,
+      "git_commit": "6223975a28031c2024bff756c19a3c9743e6e645",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "concurrency_levels": [
+          16
+        ],
+        "OLLAMA_NUM_PARALLEL": "16",
+        "models": [
+          "31b"
+        ]
+      },
+      "complete_run": true
+    },
+    {
+      "variant": "26b-a4b (slots=users)",
+      "run_id": "20261116T154215Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "1",
+      "levels": [
+        1
+      ],
+      "requests": 15,
+      "git_commit": "3b84451719d04925290dd6e1321649c7957c63eb",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "concurrency_levels": [
+          1
+        ],
+        "OLLAMA_NUM_PARALLEL": "1",
+        "models": [
+          "26b-a4b"
+        ]
+      },
+      "complete_run": true
+    },
+    {
+      "variant": "26b-a4b (slots=users)",
+      "run_id": "20261116T154358Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "2",
+      "levels": [
+        2
+      ],
+      "requests": 30,
+      "git_commit": "3b84451719d04925290dd6e1321649c7957c63eb",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "concurrency_levels": [
+          2
+        ],
+        "OLLAMA_NUM_PARALLEL": "2",
+        "models": [
+          "26b-a4b"
+        ]
+      },
+      "complete_run": true
+    },
+    {
+      "variant": "26b-a4b (slots=users)",
+      "run_id": "20261116T154603Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "4",
+      "levels": [
+        4
+      ],
+      "requests": 60,
+      "git_commit": "3b84451719d04925290dd6e1321649c7957c63eb",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "concurrency_levels": [
+          4
+        ],
+        "OLLAMA_NUM_PARALLEL": "4",
+        "models": [
+          "26b-a4b"
+        ]
+      },
+      "complete_run": true
+    },
+    {
+      "variant": "26b-a4b (slots=users)",
+      "run_id": "20261116T154845Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "8",
+      "levels": [
+        8
+      ],
+      "requests": 120,
+      "git_commit": "3b84451719d04925290dd6e1321649c7957c63eb",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "concurrency_levels": [
+          8
+        ],
+        "OLLAMA_NUM_PARALLEL": "8",
+        "models": [
+          "26b-a4b"
+        ]
+      },
+      "complete_run": true
+    },
+    {
+      "variant": "26b-a4b (slots=users)",
+      "run_id": "20261116T155239Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "16",
+      "levels": [
+        16
+      ],
+      "requests": 240,
+      "git_commit": "3b84451719d04925290dd6e1321649c7957c63eb",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "concurrency_levels": [
+          16
+        ],
+        "OLLAMA_NUM_PARALLEL": "16",
+        "models": [
+          "26b-a4b"
+        ]
+      },
+      "complete_run": true
+    },
+    {
+      "variant": "e4b (slots=16)",
+      "run_id": "20261115T195725Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "16",
+      "levels": [
+        1,
+        2,
+        4,
+        8,
+        16
+      ],
+      "requests": 465,
+      "git_commit": "d8505d9fc3369d87a05bf68bf21a25c595d026e2",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "time_budget_hours": 4.5,
+        "models": [
+          "e4b",
+          "12b",
+          "31b",
+          "26b-a4b"
+        ]
+      },
+      "complete_run": false
+    },
+    {
+      "variant": "12b (slots=16)",
+      "run_id": "20261115T195725Z_promaxgb10-2c9c_8ad16415",
+      "OLLAMA_NUM_PARALLEL": "16",
+      "levels": [
+        1,
+        2,
+        4,
+        8,
+        16
+      ],
+      "requests": 465,
+      "git_commit": "d8505d9fc3369d87a05bf68bf21a25c595d026e2",
+      "config_sha256": "8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7",
+      "cli_overrides": {
+        "time_budget_hours": 4.5,
+        "models": [
+          "e4b",
+          "12b",
+          "31b",
+          "26b-a4b"
+        ]
+      },
+      "complete_run": false
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+key,value
+run_id,20261115T195641Z_promaxgb10-2c9c_8ad16415
+timestamp_utc,2026-11-15T19:56:57+00:00
+hostname,promaxgb10-2c9c
+user,gdasilv2
+os,Ubuntu 24.04.5 LTS
+kernel,7.0.0-1025-nvidia
+arch,aarch64
+cpu,Cortex-X925+Cortex-A725
+mem_total_gib,121
+gpu,NVIDIA GB10
+nvidia_driver,580.178.04
+cuda_version,13.0
+docker_version,"Docker version 29.6.2, build dfc4efb"
+nvidia_container_toolkit,NVIDIA Container Toolkit CLI version 1.20.1
+backend.type,ollama
+backend.base_url,http://127.0.0.1:11435/v1
+backend.native_url,http://127.0.0.1:11435
+server.mode,native
+server.binary_path,/usr/local/bin/ollama
+server.binary_sha256,81f230792fddb5202e2e8b13bdd8671da72e6a14f56f8c75e38fcab439ad2c5e
+server.release_asset_sha256_pinned,913d9a28da6da86d551ce4ca531457767bb14d511cbc1d5ca93e9b3b8b9a8666
+server.docker_image_digest,not used (native mode); pinned for Docker runs: sha256:44236782466e814af687b3adc04b1b3e4b4288459fc9272e66e8671d11968f82
+server_version_reported,0.40.13
+server_effective_config_logged,CUDA_VISIBLE_DEVICES: GGML_VK_VISIBLE_DEVICES: GPU_DEVICE_ORDINAL: HIP_VISIBLE_DEVICES: HSA_OVERRIDE_GFX_VERSION: HTTPS_PROXY: HTTP_PROXY: LLAMA_ARG_FIT: LLAMA_ARG_FIT_TARGET: NO_PROXY: OLLAMA_CONTEXT_LENGTH:4096 OLLAMA_CREATE_REMOTE:false OLLAMA_DEBUG:INFO OLLAMA_DEBUG_LOG_REQUESTS:false OLLAMA_EDITOR: OLLAMA_FLASH_ATTENTION:false OLLAMA_GO_TEMPLATE:true OLLAMA_GPU_OVERHEAD:0 OLLAMA_HOST:http://127.0.0.1:11435 OLLAMA_IGPU_ENABLE: OLLAMA_KEEP_ALIVE:30m0s OLLAMA_KV_CACHE_TYPE: OLLAMA_LLM_LIBRARY: OLLAMA_LOAD_TIMEOUT:5m0s OLLAMA_MAX_LOADED_MODELS:1 OLLAMA_MAX_QUEUE:512 OLLAMA_MAX_TRANSFER_STREAMS:4 OLLAMA_MODELS:/home/gdasilv2/ollama-bench-models OLLAMA_NOHISTORY:false OLLAMA_NOPRUNE:false OLLAMA_NO_CLOUD:true OLLAMA_NUM_PARALLEL:2 OLLAMA_ORIGINS:[http://localhost https://localhost http://localhost:* https://localhost:* http://127.0.0.1 https://127.0.0.1 http://127.0.0.1:* https://127.0.0.1:* http://0.0.0.0 https://0.0.0.0 http://0.0.0.0:* https://0.0.0.0:* app://* file://* tauri://* vscode-webview://* vscode-file://*] OLLAMA_REMOTES:[ollama.com] OLLAMA_SCHED_SPREAD:false OLLAMA_VULKAN:true ROCR_VISIBLE_DEVICES: http_proxy: https_proxy: no_proxy:
+config_sha256,8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7
+config_path,bench/gemma4/config/gemma4_ollama_native.json
+cli_overrides.concurrency_levels,"[1, 2]"
+cli_overrides.reps,1
+cli_overrides.max_tokens,32
+cli_overrides.OLLAMA_NUM_PARALLEL,2
+cli_overrides.models,['e4b']
+prompts_sha256,5c7772860192c2ae65e360358407585aca613810ddfa05687ff67b5b7a8e199d
+git_commit,d8505d9fc3369d87a05bf68bf21a25c595d026e2
+git_branch,bench/gemma4-groundwork
+git_dirty,False
+python,3.12.3
+other_gpu_processes_at_start,[]
+preflight_ok,True
+preflight_problems,[]
+loadavg_at_start,"[0.0615234375, 0.05859375, 0.22607421875]"
+phase_seconds.idle_baseline,10.0
+phase_seconds.pull_verify,2.5
+phase_seconds.speed:e4b,16.0

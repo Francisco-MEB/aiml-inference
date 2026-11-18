@@ -1,0 +1,7 @@
+model,short_chat,long_context_prefill,coding
+e4b (slots=users),>=16,2,>=16
+12b (slots=users),>=16,1,4
+31b (slots=users),8,0,2
+26b-a4b (slots=users),>=16,1,8
+e4b (slots=16),>=16,2,>=16
+12b (slots=16),4,1,0

@@ -1,0 +1,6 @@
+model,task,metric,value,stderr,n_samples,limit,status
+e4b,mmlu_pro_computer_science,sample_len,5,,5,5,ran
+e4b,mmlu_pro_computer_science,"exact_match,custom-extract",0.6,0.2449,5,5,ran
+e4b,humaneval_instruct,sample_len,5,,5,5,ran
+e4b,humaneval_instruct,"pass@1,create_test",0.0,0.0,5,5,ran
+e4b,gpqa_main_generative_n_shot,,,,,5,SKIPPED: gated Hugging Face dataset and no HF_TOKEN set

@@ -1,0 +1,4 @@
+.tools/
+.run/
+results/**/server_*.log
+__pycache__/

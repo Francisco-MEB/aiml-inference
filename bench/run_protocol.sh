@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Starts a protocol study DETACHED from your session: it keeps running if you close VS Code,
+# lose SSH or turn off your laptop. Same arguments as harness/run_protocol.py.
+#
+#   bench/run_protocol.sh --config bench/configs/<study>.json --calibrate
+#   bench/run_protocol.sh --config bench/configs/<study>.json --mode stop --cap-hours 6
+#
+# Progress: bench/status.sh <study_id>     Stop: bench/stop_protocol.sh <study_id>
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+PY=.venv/bin/python; [[ -x $PY ]] || PY=python3
+CONFIG=""; args=("$@")
+for ((i = 0; i < ${#args[@]}; i++)); do
+  [[ "${args[i]}" == "--config" ]] && CONFIG="${args[i+1]}"
+done
+[[ -n "$CONFIG" ]] || { echo "usage: $0 --config bench/configs/<study>.json (--calibrate | --mode ...)"; exit 2; }
+STUDY=$($PY -c "import json,sys; print(json.load(open(sys.argv[1]))['study']['id'])" "$CONFIG")
+mkdir -p bench/.run
+if pgrep -f "python[^ ]* .*harness/run_protocol\.py" > /dev/null; then
+  echo "a protocol run is already going on this machine (one at a time): bench/status.sh <study_id>"; exit 1
+fi
+# Absolute config path so the detached job doesn't depend on this shell's directory.
+args=("${args[@]/#$CONFIG/$(realpath "$CONFIG")}")
+LOG="bench/.run/$STUDY.log"
+setsid nohup "$PY" -u bench/harness/run_protocol.py "${args[@]}" >> "$LOG" 2>&1 < /dev/null &
+echo "started (pid $!), detached from this session"
+echo "  progress: bench/status.sh $STUDY"
+echo "  log:      tail -f $LOG"
+echo "  stop:     bench/stop_protocol.sh $STUDY"

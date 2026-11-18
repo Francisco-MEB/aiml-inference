@@ -1,0 +1,141 @@
+{
+  "results": {
+    "humaneval_chat": {
+      "name": "humaneval_chat",
+      "alias": "humaneval_chat",
+      "sample_len": 40,
+      "pass@1,extract_code": 1.0,
+      "pass@1_stderr,extract_code": 0.0
+    }
+  },
+  "group_subtasks": {},
+  "configs": {
+    "humaneval_chat": {
+      "task": "humaneval_chat",
+      "dataset_path": "openai/openai_humaneval",
+      "test_split": "test",
+      "doc_to_text": "Complete the following Python function. Reply with the complete function, including its signature, in a single ```python code block and nothing else.\n```python\n{{ prompt }}\n```\n",
+      "doc_to_target": "{{test}}\ncheck({{entry_point}})",
+      "unsafe_code": true,
+      "description": "",
+      "target_delimiter": " ",
+      "fewshot_delimiter": "\n\n",
+      "fewshot_config": {
+        "sampler": "default",
+        "split": null,
+        "process_docs": null,
+        "fewshot_indices": null,
+        "samples": null,
+        "doc_to_text": "Complete the following Python function. Reply with the complete function, including its signature, in a single ```python code block and nothing else.\n```python\n{{ prompt }}\n```\n",
+        "doc_to_choice": null,
+        "doc_to_target": "{{test}}\ncheck({{entry_point}})",
+        "gen_prefix": null,
+        "fewshot_delimiter": "\n\n",
+        "target_delimiter": " "
+      },
+      "num_fewshot": 0,
+      "metric_list": [
+        {
+          "metric": "def pass_at_k(references: list[str], predictions: list[list[str]], k: list[int] | None = None):\n    assert k is not None\n    if isinstance(k, int):\n        k = [k]\n    return compute_.compute(references=references, predictions=predictions, k=k)[0]\n",
+          "aggregation": "mean",
+          "higher_is_better": true,
+          "k": [
+            1
+          ]
+        }
+      ],
+      "output_type": "generate_until",
+      "generation_kwargs": {
+        "until": [
+          "<end_of_turn>"
+        ],
+        "max_gen_toks": 1024,
+        "do_sample": false,
+        "temperature": 0,
+        "reasoning_effort": "none"
+      },
+      "repeats": 1,
+      "filter_list": [
+        {
+          "name": "extract_code",
+          "filter": [
+            {
+              "function": "custom",
+              "filter_fn": "<function build_predictions_chat at 0xe4ab230e5300>"
+            }
+          ]
+        }
+      ],
+      "should_decontaminate": false,
+      "metadata": {
+        "version": 1.0,
+        "model": "gemma4:26b-a4b-it-qat",
+        "base_url": "http://127.0.0.1:11435/v1/chat/completions",
+        "num_concurrent": 4,
+        "tokenized_requests": false,
+        "max_retries": 3,
+        "config_source": "/home/gdasilv2/GH/aiml-inference/bench/gemma4/lm_eval_tasks/humaneval_chat/humaneval_chat.yaml"
+      }
+    }
+  },
+  "versions": {
+    "humaneval_chat": 1.0
+  },
+  "n-shot": {
+    "humaneval_chat": 0
+  },
+  "higher_is_better": {
+    "humaneval_chat": {
+      "pass_at_k": true,
+      "pass@1": true
+    }
+  },
+  "n-samples": {
+    "humaneval_chat": {
+      "original": 164,
+      "effective": 40
+    }
+  },
+  "config": {
+    "model": "local-chat-completions",
+    "model_args": {
+      "model": "gemma4:26b-a4b-it-qat",
+      "base_url": "http://127.0.0.1:11435/v1/chat/completions",
+      "num_concurrent": 4,
+      "tokenized_requests": false,
+      "max_retries": 3
+    },
+    "batch_size": 1,
+    "batch_sizes": [],
+    "device": "cuda:0",
+    "use_cache": null,
+    "limit": 40.0,
+    "bootstrap_iters": 100000,
+    "gen_kwargs": {
+      "temperature": 0,
+      "reasoning_effort": "none"
+    },
+    "random_seed": 42,
+    "numpy_seed": 42,
+    "torch_seed": 42,
+    "fewshot_seed": 42
+  },
+  "git_hash": "6223975",
+  "date": 1794786160.4805596,
+  "pretty_env_info": "N/A (torch not installed)",
+  "transformers_version": "N/A",
+  "lm_eval_version": "0.4.13",
+  "upper_git_hash": null,
+  "task_hashes": {
+    "humaneval_chat": "afef2fc1861dcb126bc5082a1ca536dc17247c879a169e5b7c0db167fb7d70ed"
+  },
+  "model_source": "local-chat-completions",
+  "model_name": "gemma4:26b-a4b-it-qat",
+  "model_name_sanitized": "gemma4__26b-a4b-it-qat",
+  "system_instruction": null,
+  "system_instruction_sha": null,
+  "fewshot_as_multiturn": true,
+  "chat_template": "",
+  "chat_template_sha": null,
+  "total_evaluation_time_seconds": "64.1319584689918"
+}

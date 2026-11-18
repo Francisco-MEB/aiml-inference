@@ -1,0 +1,29 @@
+# HumanEval for chat-completions endpoints. The stock humaneval/humaneval_instruct tasks rely on
+# a response prefix and on stop strings such as "\ndef", which truncate a chat model's answer
+# (it restates the signature). This variant lets the model answer in a code block and extracts it.
+task: humaneval_chat
+dataset_path: openai/openai_humaneval
+unsafe_code: true
+output_type: generate_until
+test_split: test
+doc_to_text: "Complete the following Python function. Reply with the complete function, including its signature, in a single ```python code block and nothing else.\n```python\n{{ prompt }}\n```\n"
+doc_to_target: "{{test}}\ncheck({{entry_point}})"
+metric_list:
+  - metric: !function utils.pass_at_k
+    aggregation: mean
+    higher_is_better: true
+    k: [1]
+generation_kwargs:
+  until:
+    - "<end_of_turn>"
+  max_gen_toks: 1024
+  do_sample: false
+repeats: 1
+num_fewshot: 0
+filter_list:
+  - name: "extract_code"
+    filter:
+      - function: "custom"
+        filter_fn: !function utils.build_predictions_chat
+metadata:
+  version: 1.0

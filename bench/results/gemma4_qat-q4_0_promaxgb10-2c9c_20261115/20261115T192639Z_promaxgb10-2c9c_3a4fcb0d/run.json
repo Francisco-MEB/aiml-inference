@@ -1,0 +1,128 @@
+{
+  "run_id": "20261115T192639Z_promaxgb10-2c9c_3a4fcb0d",
+  "phases": [
+    {
+      "phase": "idle_baseline",
+      "start_unix": 1794770799.288,
+      "end_unix": 1794770809.289,
+      "seconds": 10.0
+    },
+    {
+      "phase": "pull_verify",
+      "start_unix": 1794770813.218,
+      "end_unix": 1794770937.287,
+      "seconds": 124.1
+    },
+    {
+      "phase": "speed:e4b",
+      "start_unix": 1794770937.444,
+      "end_unix": 1794770995.39,
+      "seconds": 57.9
+    },
+    {
+      "phase": "quality:e4b",
+      "start_unix": 1794770999.699,
+      "end_unix": 1794771047.22,
+      "seconds": 47.5
+    }
+  ],
+  "models": [
+    {
+      "key": "e4b",
+      "tag": "gemma4:e4b-it-qat",
+      "load_plus_warmup_s": 46.9,
+      "ps_after_load": [
+        {
+          "name": "gemma4:e4b-it-qat",
+          "size": 3336883403,
+          "size_vram": 3336883403,
+          "context_length": 4096
+        }
+      ],
+      "reasoning_chars_total": 0,
+      "errors": 0,
+      "unloaded": true
+    }
+  ],
+  "quality": [
+    {
+      "model_key": "e4b",
+      "model_tag": "gemma4:e4b-it-qat",
+      "command": [
+        "/home/gdasilv2/GH/aiml-inference/.venv/bin/lm_eval",
+        "run",
+        "--model",
+        "local-chat-completions",
+        "--model_args",
+        "model=gemma4:e4b-it-qat,base_url=http://127.0.0.1:11435/v1/chat/completions,num_concurrent=4,tokenized_requests=False,max_retries=3",
+        "--tasks",
+        "mmlu_pro_computer_science,humaneval_instruct",
+        "--apply_chat_template",
+        "--gen_kwargs",
+        "temperature=0,reasoning_effort=none",
+        "--seed",
+        "42",
+        "--output_path",
+        "/home/gdasilv2/GH/aiml-inference/bench/gemma4/results/20261115T192639Z_promaxgb10-2c9c_3a4fcb0d/lm_eval/e4b",
+        "--log_samples",
+        "--limit",
+        "5",
+        "--confirm_run_unsafe_code"
+      ],
+      "limit": 5,
+      "tasks_requested": [
+        "mmlu_pro_computer_science",
+        "humaneval_instruct",
+        "gpqa_main_generative_n_shot"
+      ],
+      "tasks_skipped": [
+        {
+          "task": "gpqa_main_generative_n_shot",
+          "reason": "gated Hugging Face dataset and no HF_TOKEN set"
+        }
+      ],
+      "results": [
+        {
+          "task": "mmlu_pro_computer_science",
+          "metric": "sample_len",
+          "value": 5,
+          "n": 5,
+          "stderr": null
+        },
+        {
+          "task": "mmlu_pro_computer_science",
+          "metric": "exact_match,custom-extract",
+          "value": 0.6,
+          "n": 5,
+          "stderr": 0.24494897427831783
+        },
+        {
+          "task": "humaneval_instruct",
+          "metric": "sample_len",
+          "value": 5,
+          "n": 5,
+          "stderr": null
+        },
+        {
+          "task": "humaneval_instruct",
+          "metric": "pass@1,create_test",
+          "value": 0.0,
+          "n": 5,
+          "stderr": 0.0
+        }
+      ],
+      "returncode": 0,
+      "server_env": {
+        "OLLAMA_NUM_PARALLEL": "4",
+        "OLLAMA_CONTEXT_LENGTH": "16384",
+        "OLLAMA_MAX_LOADED_MODELS": "1",
+        "OLLAMA_KEEP_ALIVE": "30m",
+        "OLLAMA_NO_CLOUD": "1",
+        "OLLAMA_BENCH_VERSION": "0.40.13",
+        "OLLAMA_BENCH_PORT": "11435",
+        "OLLAMA_MODELS": "/home/gdasilv2/ollama-bench-models",
+        "OLLAMA_BENCH_BIN": "/usr/local/bin/ollama"
+      }
+    }
+  ]
+}
