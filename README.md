@@ -42,6 +42,8 @@ The first launch downloads the model (~36 GB) and compiles kernels, which takes 
 | [`docs/ndcode.md`](docs/ndcode.md) | Installing and using the campus coding agent; what's locked down; upgrading OpenCode |
 | [`docs/coding-eval/README.md`](docs/coding-eval/README.md) | How `ndcode` compares to Claude Code (local and cloud), with raw data |
 | [`docs/capacity/README.md`](docs/capacity/README.md) | How many users a node serves, what saturates first (GPU vs Python), and how many nodes campus needs |
+| [`bench/README.md`](bench/README.md), [`bench/benchmark-protocol.md`](bench/benchmark-protocol.md) | The club benchmark (`aiml-bench/2.0`): every model family small to large on vLLM (Dells) and MLX (Macs), speed, user capacity and core quality |
+| [`serving/mlx/README.md`](serving/mlx/README.md) | MLX on the Macs, and the smoke test Mac owners run first |
 | [`serving/vllm/README.md`](serving/vllm/README.md) | Every `serve.sh` setting |
 | [`harness/README.md`](harness/README.md) | Chat client options |
 | [`scripts/README.md`](scripts/README.md), [`architecture/week2.md`](architecture/week2.md) | Architecture group tools and model primer |
@@ -52,7 +54,8 @@ The first launch downloads the model (~36 GB) and compiles kernels, which takes 
 |---|---|
 | [`architecture/`](architecture/) | Architecture group work: per-node model evals on the Dell Pro GB10s. Start with [`week2.md`](architecture/week2.md) and [`base_eval.py`](architecture/base_eval.py). |
 | [`docs/`](docs/) | Overview, runbooks, and eval results (see [Documentation](#documentation)). |
-| [`serving/`](serving/) | Model servers. [`serving/vllm/`](serving/vllm/) runs vLLM in its own uv env (`./serving/vllm/serve.sh`): Qwen3.5-35B-A3B, tool calling, 128k context. |
+| [`serving/`](serving/) | Model servers. [`serving/vllm/`](serving/vllm/) runs vLLM in its own uv env (`./serving/vllm/serve.sh`): Qwen3.5-35B-A3B, tool calling, 128k context. [`serving/mlx/`](serving/mlx/) is the MLX env for the Macs. |
+| [`bench/`](bench/) | The club benchmark: model catalog, protocol, harness, results. Ask Claude Code to "benchmark the <family> family". |
 | [`clients/`](clients/) | **`ndcode`**, the zero-config "campus Claude Code" (a locked-down OpenCode distribution). Install with `./clients/install.sh`. |
 | [`harness/`](harness/) | Lightweight clients for the served models. [`chat.py`](harness/chat.py) is a plain-language terminal chat that works with vLLM or Ollama. |
 | [`evals/`](evals/) | Automated evaluations. [`evals/coding/`](evals/coding/) runs real coding tasks through `ndcode`, Claude Code on our model, and cloud Claude. |

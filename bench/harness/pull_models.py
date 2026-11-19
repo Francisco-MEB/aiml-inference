@@ -1,86 +1,72 @@
 #!/usr/bin/env python3
-"""Pulls each configured model through the Ollama API and verifies it against the pinned
-digests. Writes models.json (what was actually on disk) for env.json."""
+"""Downloads each configured model at its pinned revision into the Hugging Face cache and
+verifies the weights against the pinned sha256 of every file (fill_digests.py writes them).
+Writes models.json (what was actually on disk) for env.json.
+
+  python3 harness/pull_models.py --config configs/<study>.json [--models k1 k2] [--no-pull]
+
+Downloads go through a pinned huggingface_hub CLI (HF_HUB_VERSION), skip subfolders such as
+original/ and metal/ (no server loads them), and need HF_TOKEN for gated repos (Llama)."""
 import argparse
-import json
 import os
-import pathlib
+import subprocess
 import sys
-import urllib.request
 
 import common
+import hf
+
+HF_HUB_VERSION = "2.4.0"          # same version as serving/vllm/uv.lock
 
 
-def pull(native_url, tag):
-    req = urllib.request.Request(native_url + "/api/pull",
-                                 data=json.dumps({"model": tag, "stream": True}).encode(),
-                                 headers={"Content-Type": "application/json"})
-    last = ""
-    with urllib.request.urlopen(req, timeout=24 * 3600) as r:
-        for line in r:
-            msg = json.loads(line)
-            if msg.get("error"):
-                raise SystemExit(f"pull {tag} failed: {msg['error']}")
-            status = msg.get("status", "")
-            if status != last and not status.startswith("pulling "):
-                print(f"  {tag}: {status}")
-            last = status
+def pull(m, log=print):
+    cmd = ["uvx", "--from", f"huggingface_hub=={HF_HUB_VERSION}", "hf", "download", m["repo"],
+           "--revision", m["revision"]]
+    for pat in m.get("download_exclude") or hf.DOWNLOAD_EXCLUDE:
+        cmd += ["--exclude", pat]
+    log(f"  downloading {m['repo']}@{m['revision'][:10]} ({m.get('model_blob_gb')} GB) ...")
+    if m.get("gated") and not (os.environ.get("HF_TOKEN") or os.environ.get(
+            "HUGGING_FACE_HUB_TOKEN")):
+        log(f"  {m['repo']} is gated: accept its license on huggingface.co and set HF_TOKEN")
+    r = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True,
+                       check=False)
+    if r.returncode != 0:
+        raise SystemExit(f"download of {m['repo']} failed: {r.stderr.strip()[-600:]}")
 
 
-def verify(cfg, m, hash_blob=True):
-    """Compare what the server has with the pins. Returns a record; record['ok'] is the verdict."""
-    native = cfg["backend"]["native_url"]
-    rec = {"key": m["key"], "tag": m["tag"], "pinned_manifest_sha256": m["manifest_sha256"],
-           "pinned_model_blob_sha256": m["model_blob_sha256"], "checks": {}}
-    tags = {t["name"]: t for t in common.http_json(native + "/api/tags").get("models", [])}
-    t = tags.get(m["tag"])
-    if not t:
-        rec["ok"] = False
-        rec["checks"]["present"] = False
+def verify(m, rehash=True):
+    """Compare the cached snapshot with the pins. Returns a record; record['ok'] is the verdict."""
+    files = m.get("weight_files") or {}
+    rec = {"key": m["key"], "tag": m["tag"], "repo": m["repo"], "revision": m["revision"],
+           "pinned_weight_files": len(files)}
+    if not files:
+        rec.update(ok=False, checks={"pinned_checksums": False},
+                   note="no weight_files in the config: run fill_digests.py")
         return rec
-    rec["ollama_digest"] = t.get("digest")
-    rec["size_bytes"] = t.get("size")
-    rec["details"] = t.get("details")
-    rec["checks"]["manifest_digest"] = t.get("digest") == m["manifest_sha256"]
-    # If we can read the model store (native mode), check the weights file itself.
-    name, _, tagpart = m["tag"].partition(":")
-    store = pathlib.Path(os.path.expanduser(cfg["server"]["models_dir"]))
-    mf = store / "manifests/registry.ollama.ai/library" / name / tagpart
-    if mf.is_file():
-        man = json.loads(mf.read_text())
-        layers = {layer["mediaType"].rsplit(".", 1)[-1]: layer["digest"] for layer in man["layers"]}
-        rec["layers"] = layers
-        blob = layers.get("model", "")
-        rec["checks"]["model_layer_digest"] = blob == "sha256:" + m["model_blob_sha256"]
-        bf = store / "blobs" / blob.replace(":", "-")
-        if hash_blob and bf.is_file():
-            rec["model_blob_sha256_on_disk"] = common.sha256_file(bf)
-            rec["checks"]["model_blob_bytes"] = \
-                rec["model_blob_sha256_on_disk"] == m["model_blob_sha256"]
-    else:
-        rec["checks"]["store_readable"] = "no (digest from /api/tags only)"
-    rec["ok"] = all(v for v in rec["checks"].values() if isinstance(v, bool))
+    v = hf.verify_cache(m["repo"], m["revision"], files, rehash=rehash)
+    rec.update(ok=v["ok"], checks=v["checks"], missing=v["missing"],
+               size_bytes=v["size_bytes"], snapshot=v["snapshot"], rehashed=rehash)
     return rec
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--config", default=str(common.BENCH / "configs/TEMPLATE.json"))
-    ap.add_argument("--models", nargs="+", help="model keys (default: all non-optional)")
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--config", required=True)
+    ap.add_argument("--models", nargs="+", help="model keys (default: all)")
     ap.add_argument("--out", default="models.json")
     ap.add_argument("--no-pull", action="store_true", help="verify only")
+    ap.add_argument("--no-rehash", action="store_true", help="check names and sizes only")
     a = ap.parse_args()
     cfg = common.load_json(a.config)
-    keys = a.models or [m["key"] for m in cfg["models"] if not m.get("optional")]
     recs = []
     for m in cfg["models"]:
-        if m["key"] not in keys:
+        if a.models and m["key"] not in a.models:
             continue
         if not a.no_pull:
-            print(f"pulling {m['tag']} ...")
-            pull(cfg["backend"]["native_url"], m["tag"])
-        rec = verify(cfg, m)
-        print(f"  {m['tag']}: {'VERIFIED' if rec['ok'] else 'MISMATCH'} {rec['checks']}")
+            pull(m)
+        rec = verify(m, rehash=not a.no_rehash)
+        print(f"  {m['repo']}: {'VERIFIED' if rec['ok'] else 'MISMATCH'} "
+              f"({rec.get('size_bytes', 0) / 1e9:.2f} GB, missing {rec.get('missing')})")
         recs.append(rec)
     common.write_json(a.out, recs)
     sys.exit(0 if all(r["ok"] for r in recs) else 1)

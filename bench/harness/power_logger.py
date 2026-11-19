@@ -4,6 +4,7 @@ t_unix is the same clock (time.time) that the benchmark CSV uses, so rows can be
 wall_meter_w is left empty: fill it from the wall meter log (see make_report.py --wall-csv)."""
 import argparse
 import csv
+import shutil
 import signal
 import subprocess
 import sys
@@ -22,6 +23,14 @@ def main():
     ap.add_argument("--interval", type=float, default=1.0)
     a = ap.parse_args()
     ms = max(100, int(a.interval * 1000))
+    if not shutil.which("nvidia-smi"):
+        # No NVIDIA GPU (e.g. a Mac): header only, and wait to be stopped like the real logger.
+        with open(a.out, "w", newline="") as f:
+            csv.writer(f).writerow(COLS)
+        signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+        signal.signal(signal.SIGINT, lambda *_: sys.exit(0))
+        while True:
+            time.sleep(3600)
     p = subprocess.Popen(["nvidia-smi", f"--query-gpu={','.join(FIELDS)}",
                           "--format=csv,noheader,nounits", "-lms", str(ms)],
                          stdout=subprocess.PIPE, text=True)

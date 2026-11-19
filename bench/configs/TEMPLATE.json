@@ -1,85 +1,35 @@
 {
-  "protocol": "aiml-bench/1.0",
-  "_readme": "Copy to configs/<study_id>.json and fill every FILL_ME. Fields under request, prompts, sweep and thresholds are fixed by the protocol (bench/benchmark-protocol.md); run_bench.py refuses a config that changes them.",
+  "protocol": "aiml-bench/2.0",
+  "_readme": "Don't fill this by hand: `python3 bench/harness/catalog.py plan <family> --write` writes bench/configs/<study_id>.json from the catalog and this template. Fields under request, prompts, sweep, thresholds and quality are fixed by the protocol (bench/benchmark-protocol.md); run_bench.py refuses a config that changes them.",
   "study": {
     "id": "FILL_ME <family>_<quant>_<machine>_<YYYYMMDD>",
     "member": "FILL_ME name or netid",
-    "machine": "FILL_ME hostname, e.g. promaxgb10-2c9c",
-    "hardware": "FILL_ME e.g. Dell Pro Max GB10, 128 GB unified",
+    "machine": "FILL_ME hostname",
+    "hardware": "FILL_ME",
+    "family": "FILL_ME",
     "notes": ""
   },
-  "quantization": "FILL_ME member's choice, e.g. q4_K_M, Q4_0 (QAT), q8_0",
+  "quantization": "FILL_ME the study's build format from the catalog, e.g. nvfp4, bf16, 4bit",
   "backend": {
-    "type": "ollama",
-    "base_url": "http://127.0.0.1:11435/v1",
-    "native_url": "http://127.0.0.1:11435"
+    "type": "FILL_ME vllm or mlx",
+    "host": "127.0.0.1",
+    "port": 8100
   },
   "server": {
-    "mode": "native",
-    "deviation_note": "Not run in the club's Docker image: the same Ollama version as a native binary under a normal user account (no docker-group access). Set server.mode to docker when you can.",
-    "ollama_version": "0.40.13",
-    "port": 11435,
-    "models_dir": "~/ollama-bench-models",
-    "native": {
-      "binary_path": "/usr/local/bin/ollama",
-      "binary_sha256": "81f230792fddb5202e2e8b13bdd8671da72e6a14f56f8c75e38fcab439ad2c5e",
-      "binary_note": "The host's installed Ollama 0.40.13, run as a normal user on a private port. Remove binary_path to use the release asset below via server/install_ollama_native.sh instead.",
-      "asset_url": "https://github.com/ollama/ollama/releases/download/v0.40.13/ollama-linux-arm64.tar.zst",
-      "asset_sha256": "913d9a28da6da86d551ce4ca531457767bb14d511cbc1d5ca93e9b3b8b9a8666"
-    },
-    "docker": {
-      "image": "ollama/ollama:0.40.13",
-      "index_digest": "sha256:b2f0122c476bc9fe7ce679d8bb4bd555351e25e2554eefb156f61cb0a89cf429",
-      "arm64_digest": "sha256:44236782466e814af687b3adc04b1b3e4b4288459fc9272e66e8671d11968f82",
-      "amd64_digest": "sha256:93c1376d651a9f1579ee40cc5763852f08b204466371e4bb64bca2a1d8d08e2d"
-    },
-    "env": {
-      "OLLAMA_NUM_PARALLEL": "1",
-      "OLLAMA_CONTEXT_LENGTH": "4096",
-      "OLLAMA_MAX_LOADED_MODELS": "1",
-      "OLLAMA_KEEP_ALIVE": "30m",
-      "OLLAMA_NO_CLOUD": "1"
-    }
+    "vllm_project": "serving/vllm",
+    "mlx_project": "serving/mlx",
+    "startup_timeout_s": 1800
   },
-  "models": [
-    {
-      "key": "FILL_ME <family>-<size>[-a<active>], e.g. qwen3.5-35b-a3b",
-      "label": "FILL_ME",
-      "arch": "dense or moe",
-      "params_b": 0,
-      "active_params_b": 0,
-      "tag": "FILL_ME exact Ollama tag",
-      "quantization": "FILL_ME same as top-level",
-      "manifest_sha256": "FILL_ME from pull_models.py or the registry",
-      "model_blob_sha256": "FILL_ME",
-      "thinking_off": "FILL_ME how thinking is disabled, e.g. reasoning_effort=none, or 'not supported: lowest setting low'",
-      "extra_body": {
-        "reasoning_effort": "none"
-      }
-    }
-  ],
+  "models": [],
   "request": {
     "temperature": 0,
-    "seed": 42,
     "max_tokens": 256,
     "thinking": "off",
-    "extra_body": {
-      "reasoning_effort": "none"
-    },
     "cache_busting": "each request's user message starts with a deterministic 8-hex nonce so the server's prompt cache cannot skip prefill",
     "timeout_s": 1800
   },
   "sweep": {
-    "concurrency_levels": [
-      1,
-      2,
-      4,
-      8,
-      16,
-      32,
-      64,
-      128
-    ],
+    "concurrency_levels": [1, 2, 4, 8, 16, 32, 64, 128],
     "reps": 5,
     "reps_from_32_users": 3,
     "warmup_max_tokens": 16,
@@ -90,32 +40,15 @@
     "p95_ttft_s_max": 2.0,
     "decode_tps_min": 10.0,
     "decode_stat": "median",
-    "decode_stats": [
-      "median",
-      "mean",
-      "p05",
-      "min"
-    ],
+    "decode_stats": ["median", "mean", "p05", "min"],
     "scenarios": [
-      {
-        "name": "interactive",
-        "p95_ttft_s_max": 2.0,
-        "decode_tps_min": 10.0
-      },
-      {
-        "name": "relaxed",
-        "p95_ttft_s_max": 5.0,
-        "decode_tps_min": 5.0
-      },
-      {
-        "name": "strict",
-        "p95_ttft_s_max": 1.0,
-        "decode_tps_min": 20.0
-      }
+      {"name": "interactive", "p95_ttft_s_max": 2.0, "decode_tps_min": 10.0},
+      {"name": "relaxed", "p95_ttft_s_max": 5.0, "decode_tps_min": 5.0},
+      {"name": "strict", "p95_ttft_s_max": 1.0, "decode_tps_min": 20.0}
     ]
   },
   "run": {
-    "time_budget_hours": 12
+    "time_budget_hours": 24
   },
   "prompts": {
     "path": "prompts/prompts_v1.jsonl",
@@ -123,33 +56,19 @@
   },
   "power": {
     "interval_s": 1,
-    "source": "nvidia-smi power.draw (GPU only; unified memory and CPU are not included, so use the wall meter for system power)"
+    "source": "nvidia-smi power.draw on NVIDIA (GPU only; unified memory and CPU are not included, so use the wall meter for system power). Not recorded on Macs in 2.0."
   },
   "quality": {
-    "enabled": false,
-    "tasks": [
-      "mmlu_pro",
-      "humaneval_chat",
-      "gpqa_main_generative_n_shot"
-    ],
-    "gated_tasks": [
-      "gpqa_main_generative_n_shot"
-    ],
-    "code_exec_tasks": [
-      "humaneval_chat"
-    ],
+    "enabled": true,
+    "tasks": ["mmlu_pro", "gpqa_diamond_cot_zeroshot", "ifeval", "gsm8k_cot_zeroshot", "humaneval_instruct", "aime25"],
+    "limits": {"mmlu_pro": 100},
+    "gated_tasks": ["gpqa_diamond_cot_zeroshot"],
+    "code_exec_tasks": ["humaneval_instruct"],
     "allow_code_execution": true,
-    "limit": null,
-    "num_concurrent": 4,
-    "gen_kwargs": "temperature=0,reasoning_effort=none",
-    "include_path": "lm_eval_tasks",
-    "server_env": {
-      "OLLAMA_NUM_PARALLEL": "4",
-      "OLLAMA_CONTEXT_LENGTH": "16384"
-    },
-    "standard_limits": {
-      "mmlu_pro": 10,
-      "humaneval_chat": 40
-    }
+    "num_concurrent": 32,
+    "slots": 32,
+    "context": 16384,
+    "max_gen_toks": 4096,
+    "gen_kwargs": "temperature=0"
   }
 }

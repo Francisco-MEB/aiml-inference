@@ -1,127 +1,140 @@
 ---
 name: benchmark
-description: Run a club inference benchmark that follows the aiml-bench/1.0 protocol (bench/benchmark-protocol.md) - pick models and quantization, calibrate, estimate the time on this machine, let the member choose how far to push simultaneous users (up to 128), run it detached from the session, then validate and report. Use when a member wants to benchmark, compare or measure a model's speed, user capacity or throughput on a club machine, or asks how long a benchmark will take.
+description: Run a club inference benchmark under the aiml-bench/2.0 protocol (bench/benchmark-protocol.md) on vLLM (Dell GB10) or MLX (Mac). Use when a member names their assignment (a model family like "Qwen" or one model) to benchmark, asks to measure a model's speed, user capacity, throughput or quality on a club machine, or asks how long a benchmark will take.
 ---
 
-# Club benchmark (aiml-bench/1.0)
+# Club benchmark (aiml-bench/2.0)
 
-The protocol is `bench/benchmark-protocol.md`. **Read it before anything else.** It fixes the
-prompts, answer length, user levels, server settings and column names, so that every member's
-results line up. Never change a fixed value to make a run faster or fit a machine. If something
-can't follow the protocol, stop and tell the member what and why.
+The member says what they were assigned: a family (`qwen`, `gemma`, `gpt-oss`, `llama`, `muse`,
+`mistral`, `glm`) or one model (catalog key or Hugging Face repo). Everything else comes from
+the catalog and the machine; the member's only decisions are the high-level mode and the time
+cap (step 6). The protocol is `bench/benchmark-protocol.md`: read sections 1, 5 and 10 before
+step 1, and look up the rest when a step needs it. Values it marks as fixed stay fixed; when
+something can't follow the protocol, stop and tell the member what and why.
 
-Everything runs from the repo root with the repo's `.venv` (`uv sync` once if it's missing).
-`$PY` below is `.venv/bin/python`.
+Run from the repo root. `$PY` is `.venv/bin/python` (run `uv sync` once if it's missing).
 
-## 1. Is the machine free?
+## 1. Machine is free and ready
 
 ```sh
 $PY bench/harness/preflight.py
 ```
 
-On `STOP`, show the member who or what is on the GPU and stop. Don't load a model on a shared
-machine someone else is using. Never touch another person's server, container or model, and
-never the system Ollama service.
+- `STOP`: show the member who or what is on the machine and end here. Their run waits for a
+  free machine; other people's servers, containers and models stay untouched.
+- Engine environment, once per machine: `cd serving/vllm && uv sync` on a Dell,
+  `cd serving/mlx && uv sync` on a Mac.
+- `HF_TOKEN` exported (`echo ${HF_TOKEN:+set}`). Without it the gated GPQA task is skipped and
+  gated models (Llama 4 Scout) can't download; tell the member, then continue if they agree.
+- Linux: `loginctl show-user $USER -p Linger` and `grep KillUserProcesses /etc/systemd/logind.conf`
+  (protocol section 10). Mac: remind them to run `caffeinate -dims` for the length of the run.
 
-Also check that the session closing won't kill the run (protocol section 9):
-`loginctl show-user $USER -p Linger` and `grep KillUserProcesses /etc/systemd/logind.conf`.
-If `KillUserProcesses=yes` and `Linger=no`, tell the member before going further.
+Done when preflight says `PASS` and the engine env exists.
 
-## 2. Ask the member
+## 2. Plan the study
 
-Use one question round (AskUserQuestion) for:
-- **Models**: the exact Ollama tags. Don't guess tag names. The next step checks them in the
-  registry.
-- **Quantization**: the member's choice (e.g. `q4_K_M`, `Q4_0` QAT, `q8_0`). It must be the same
-  for every model in the study. Say that it will be recorded in every row, the folder name and
-  the spreadsheet.
-- **Backend**: Ollama in Docker if their account can use Docker (`docker ps` works), otherwise
-  native Ollama on port 11435. The deviation is recorded automatically.
+```sh
+$PY bench/harness/catalog.py plan <assignment>
+```
 
-## 3. Write the study config
+Show the member the plan as printed: machine and budget, study quantization and publisher, each
+model (size class, dense or MoE, GB), every **left out** model with its reason, and any
+DEVIATION line. A name the catalog refuses goes back to the benchmarks lead; offer the closest
+catalog names. Done when the member has seen the plan.
 
-1. Copy `bench/configs/TEMPLATE.json` to `bench/configs/<study_id>.json`, with
-   `study_id = <family>_<quant>_<machine>_<YYYYMMDD>`.
-2. Fill every `FILL_ME`: study id, member, machine (`hostname`), hardware, quantization, one
-   model entry per tag (key `<family>-<size>[-a<active>]`, label, arch, params, active params,
-   quantization, `thinking_off`, `extra_body`). For native mode on a host with Ollama already
-   installed, set `server.native.binary_path` and `binary_sha256` (`sha256sum $(which ollama)`)
-   and check that its `--version` equals `server.ollama_version`.
-3. Fill the checksums from the registry. This also proves each tag exists:
-   ```sh
-   $PY bench/harness/fill_digests.py bench/configs/<study_id>.json
-   ```
-   If the registry's `file_type` doesn't match the member's quantization, say so and ask before
-   continuing.
-4. Thinking off: for Ollama, `extra_body: {"reasoning_effort": "none"}`. If the model can't turn
-   thinking off (e.g. gpt-oss), use its lowest setting and write that in `thinking_off`.
-5. Check it:
-   ```sh
-   $PY -c "import sys,json; sys.path.insert(0,'bench/harness'); import protocol; print(protocol.check_config(json.load(open('bench/configs/<study_id>.json'))) or 'compliant')"
-   ```
+## 3. Write and pin the config
+
+```sh
+$PY bench/harness/catalog.py plan <assignment> --member <name or netid> --write
+$PY bench/harness/fill_digests.py bench/configs/<study_id>.json
+$PY -c "import sys,json; sys.path.insert(0,'bench/harness'); import protocol; print(protocol.check_config(json.load(open('bench/configs/<study_id>.json'))) or 'compliant')"
+```
+
+Done when `fill_digests.py` lists every model's weight files and the check prints `compliant`.
 
 ## 4. Calibrate (levels 1, 2, 4)
 
 ```sh
 bench/run_protocol.sh --config bench/configs/<study_id>.json --calibrate
-bench/status.sh <study_id>
 ```
 
-This pulls each model, verifies its weights file, and measures levels 1, 2 and 4. That is real
-data and stays in the study. Watch the status until it says `done`, and report any `FAILED`
-line from `bench/.run/<study_id>.log`.
+It downloads each model at its pinned commit, verifies every weight file, and measures levels
+1, 2 and 4: real data that stays in the study. Large models take a while to download; give the
+member `bench/status.sh <study_id>` and `tail -f bench/.run/<study_id>.log`, and check back
+when they return. Done when status says `done`; report every `FAILED` or `SERVER FAILED` line
+from the log with its reason.
 
-## 5. Show the time, then let the member choose
+## 5. Estimate the time
 
 ```sh
 $PY bench/harness/estimate_time.py --config bench/configs/<study_id>.json
 ```
 
-Show the member the table for each mode (`stop`, `all`, `cap:10`), per model and in total. Say
-it's a range: actual time was 0.73× to 2.05× of the projection on the GB10 reference, and
-64 or 128 users is the least certain. Then ask (AskUserQuestion):
+Build one table per mode (`stop`, `all`, `cap:10`): minutes per model and in total, plus about
+0.5 to 1 hour per model for the quality phase (protocol section 7). State it as a range:
+actual time ran 0.73× to 2.05× of the projection on the GB10 reference, least certain at 64 and
+128 users.
+
+## 6. Member chooses
+
+One AskUserQuestion round:
 - **Mode** for 8 to 128 users: `stop` (recommended), `all`, or `cap:<minutes per level>`, each
   option with its estimated time.
 - **Total cap** in hours (no new level starts after it). Default: the high end of the chosen
-  mode's range, rounded up.
+  mode's range plus the quality phase, rounded up.
 
-Before a run longer than an hour, remind them to tell the club channel.
+For a run longer than an hour, remind them to book the machine in the club channel.
 
-## 6. Run it detached
+## 7. Run it detached
 
 ```sh
 bench/run_protocol.sh --config bench/configs/<study_id>.json --mode <mode> --cap-hours <h>
 ```
 
-It keeps running if this session, VS Code or SSH closes. Give the member these commands:
+This runs the remaining levels, then each model's quality phase (skipped and noted when the
+same repo@revision already has a quality result anywhere in `bench/results/`). It survives
+this session, VS Code and SSH closing. Give the member:
 - `bench/status.sh <study_id>`: progress and remaining time
 - `tail -f bench/.run/<study_id>.log`: live log
 - `bench/stop_protocol.sh <study_id>`: clean stop; completed levels are kept
-- the same `run_protocol.sh` command again resumes after a stop or a crash
+- the same `run_protocol.sh` command again: resume after a stop or a crash
 
-Don't poll in a loop while it runs. When the member comes back, read `status.sh` and the log.
+Check `status.sh` and the log when the member comes back, rather than polling while it runs.
 
-## 7. When it's done
+## 8. Validate and report
 
 ```sh
 $PY bench/harness/validate_results.py <study_id>
 ```
 
-- On `FAIL`, explain each one; don't hide them.
-- The merged data and `findings.xlsx` are in `bench/results/<study_id>/combined/`. Rebuild them
-  with `$PY bench/harness/merge_study.py <study_id>` if needed.
-- Summarize for the member: single-user speed, capacity per workload under the interactive
-  target, peak throughput, what limited capacity, which workloads the `stop` rule ended where,
-  the actual time against the estimate (Timing sheet), and the caveats (GPU-only power, one
-  machine, the quantization).
-- Commit the config and results on the member's branch only if they ask, and never push
-  without being asked.
+- Explain every `FAIL` line and what fixes it; the study is shareable only when it passes.
+- `bench/results/<study_id>/combined/findings.xlsx` holds the merged data (rebuild with
+  `$PY bench/harness/merge_study.py <study_id>`).
+- Summarize: per model (small to large) single-user speed, capacity per workload under the
+  interactive target, peak throughput, what limited capacity, quality per task, where `stop`
+  ended each workload, actual time against the estimate (Timing sheet), and the caveats (the
+  study's quantization, thinking off, GPU-only power, one machine).
 
-## Don'ts
+## 9. Share
 
-- Don't edit `request`, `prompts`, `sweep` or `thresholds` in a study config, or pass
-  `--test-overrides` for real results. Overrides are for testing the harness; those runs are
-  marked as deviating and are never merged.
-- Don't mix quantizations within one study.
-- Don't invent tags, versions or numbers. Check them or say you couldn't.
-- Don't run two studies at once on one machine.
+Once validation passes, and the member says to:
+
+```sh
+git switch -c results/<study_id>
+git add bench/configs/<study_id>.json bench/results/<study_id>
+git commit -m "results: <study_id>"
+git push -u origin results/<study_id>
+```
+
+Without push access on the machine, give them
+`tar czf <study_id>.tgz bench/configs/<study_id>.json bench/results/<study_id>` to send to the
+benchmarks lead instead.
+
+## Guardrails
+
+- Models, builds and quantizations come only from the catalog; one study holds one quantization.
+- Fixed sections of a config (`request`, `prompts`, `sweep`, `thresholds`, `quality`) keep the
+  values `catalog.py` wrote. `--test-overrides` is for testing the harness: those runs are
+  marked as deviating and never merged.
+- Report tags, versions and numbers as the tools printed them, or say you couldn't check.
+- One study at a time per machine.

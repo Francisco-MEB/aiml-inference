@@ -6,7 +6,10 @@ bench/run_protocol.sh, which detaches it from your session.
   python3 harness/run_protocol.py --config configs/<study>.json --mode stop --cap-hours 6
 
 Each level is one run_bench.py call with server slots = users, so the server restarts between
-levels. Already-complete levels are skipped, so the same command resumes after an interruption.
+levels. After a model's levels, its quality phase runs once (one more run_bench.py call with
+the quality server), unless this study or another one already measured the same build
+(repo@revision). Already-complete levels and quality phases are skipped, so the same command
+resumes after an interruption. --calibrate runs no quality phase.
 
 Modes for levels above the calibration levels (protocol section "High levels"):
   stop       per model and workload, stop after the first level that fails the relaxed
@@ -79,6 +82,57 @@ def wait_for_free_gpu(cfg, free_min, max_wait_min, status):
         time.sleep(30)
 
 
+def quality_step(a, cfg, study, m, status, t_start):
+    """The model's quality phase, unless this build's quality is already measured."""
+    test = "--allow-deviation" in a.test_overrides
+    have = study_data.quality_runs(study)
+    if m["key"] in have and not test:
+        log(f"quality for {m['key']} already done in {have[m['key']]}")
+        return
+    other = None if test else study_data.quality_elsewhere(m["repo"], m["revision"], study)
+    if other:
+        log(f"quality for {m['key']} reused from {other[0]}/{other[1]} (same repo@revision)")
+        status.d.setdefault("quality_reused", []).append(
+            {"model": m["key"], "study": other[0], "run": other[1]})
+        status.set()
+        return
+    if a.cap_hours and time.time() - t_start >= a.cap_hours * 3600:
+        status.d["skipped"].append({"model": m["key"], "users": "quality", "reason": "time cap"})
+        log(f"CAP reached; skipping the quality phase of {m['key']}")
+        return
+    pf = preflight.check(cfg, check_load=False)
+    if not pf["ok"]:
+        status.set(state="paused: another user on the GPU")
+        log("another user is on the GPU; waiting")
+        if not wait_for_free_gpu(cfg, 2, a.max_wait_min, status):
+            status.set(state="gave up: GPU busy")
+            sys.exit(1)
+    status.set(state="running", current={"model": m["key"], "users": "quality",
+                                         "workloads": cfg["quality"]["tasks"]})
+    log(f"START {m['key']} quality phase")
+    cmd = [sys.executable, "-u", str(common.BENCH / "harness/run_bench.py"),
+           "--config", a.config, "--models", m["key"], "--skip-speed", "--no-report"]
+    if study_data.any_run(study, m["key"]):       # its weights were downloaded and verified
+        cmd.append("--skip-pull")
+    cmd += [x for x in a.test_overrides]
+    t0 = time.time()
+    STOP["child"] = subprocess.Popen(cmd)
+    rc = STOP["child"].wait()
+    if STOP["requested"]:
+        status.set(state="stopped by request (resume with the same command)", current=None)
+        log(f"STOPPED by request during the quality phase of {m['key']}")
+        sys.exit(0)
+    mins = round((time.time() - t0) / 60, 1)
+    if rc != 0:
+        log(f"FAILED {m['key']} quality phase (exit {rc}, {mins} min)")
+        status.d["skipped"].append({"model": m["key"], "users": "quality",
+                                    "reason": f"exit {rc}"})
+        return
+    status.d["done"].append({"model": m["key"], "users": "quality",
+                             "workloads": cfg["quality"]["tasks"], "minutes": mins})
+    log(f"END {m['key']} quality phase ({mins} min)")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -94,6 +148,9 @@ def main():
                     help="minutes the GPU must be free before the first step")
     ap.add_argument("--max-wait-min", type=float, default=240)
     ap.add_argument("--levels", type=int, nargs="+", help="override levels (tests only)")
+    ap.add_argument("--quality-only", action="store_true",
+                    help="run only the quality phase of each model")
+    ap.add_argument("--no-quality", action="store_true", help="skip the quality phase")
     ap.add_argument("--test-overrides", nargs=argparse.REMAINDER, default=[],
                     help="extra run_bench flags for a smoke test, e.g. --reps 1 --max-tokens 32 "
                          "--allow-deviation (results are marked as deviating)")
@@ -105,6 +162,8 @@ def main():
     bad = protocol.check_config(cfg)
     if bad and "--allow-deviation" not in a.test_overrides:
         raise SystemExit("config breaks the protocol:\n  " + "\n  ".join(bad))
+    if a.quality_only and not (a.calibrate or a.mode):
+        a.mode = "stop"
     mode, level_cap_min = ("calibrate", None) if a.calibrate else (a.mode.split(":")[0], None)
     if mode == "cap":
         level_cap_min = float(a.mode.split(":")[1])
@@ -123,9 +182,11 @@ def main():
         sys.exit(1)
 
     t_start, pulled = time.time(), set()
+    do_quality = (not a.calibrate or a.quality_only) and not a.no_quality \
+        and cfg["quality"].get("enabled", True)
     for m in models:
         stopped = {}                        # workload -> reason (stop mode)
-        for n in levels:
+        for n in ([] if a.quality_only else levels):
             have = study_data.completed(study, m["key"], n)
             todo = [w for w in protocol.WORKLOADS if w not in have and w not in stopped]
             # In stop mode a workload that already failed at a lower level stays stopped.
@@ -188,6 +249,8 @@ def main():
         if stopped:
             status.d["skipped"] += [{"model": m["key"], "workload": w, "reason": r}
                                     for w, r in stopped.items()]
+        if do_quality:
+            quality_step(a, cfg, study, m, status, t_start)
 
     status.set(state="building report", current=None, estimate_remaining_min=0)
     merge = [sys.executable, str(common.BENCH / "harness/merge_study.py"), study]

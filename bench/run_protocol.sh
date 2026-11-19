@@ -22,7 +22,12 @@ fi
 # Absolute config path so the detached job doesn't depend on this shell's directory.
 args=("${args[@]/#$CONFIG/$(realpath "$CONFIG")}")
 LOG="bench/.run/$STUDY.log"
-setsid nohup "$PY" -u bench/harness/run_protocol.py "${args[@]}" >> "$LOG" 2>&1 < /dev/null &
+if command -v setsid > /dev/null; then          # Linux
+  setsid nohup "$PY" -u bench/harness/run_protocol.py "${args[@]}" >> "$LOG" 2>&1 < /dev/null &
+else                                             # macOS has no setsid: start a new session from Python
+  nohup "$PY" -c 'import os, sys; os.setsid(); os.execv(sys.argv[1], sys.argv[1:])' \
+    "$PY" -u bench/harness/run_protocol.py "${args[@]}" >> "$LOG" 2>&1 < /dev/null &
+fi
 echo "started (pid $!), detached from this session"
 echo "  progress: bench/status.sh $STUDY"
 echo "  log:      tail -f $LOG"

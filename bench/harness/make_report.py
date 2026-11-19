@@ -229,18 +229,22 @@ def build(run_dir, wall_csv=None):
         n1 = [s for s in rows if s["concurrency"] == 1]
         peak = max(rows, key=lambda s: s["aggregate_tps_mean"] or 0)
         longest = max(n1, key=lambda s: s["prompt_tokens_mean"] or 0, default={})
-        ps = (info.get(mk, {}).get("ps_after_load") or [{}])[0]
+        ps = (info.get(mk, {}).get("ps_after_load") or [{}])[0]      # 1.0 (Ollama) runs
+        sv = info.get(mk, {}).get("server") or {}                     # 2.0 runs
+        loaded = sv.get("weights_loaded_gib")
         row = {
             "model": mk, "label": m.get("label"), "architecture": m.get("arch"),
             "params_billion": m.get("params_b"),
             "active_params_billion": m.get("active_params_b", m.get("params_b")),
-            "tag": m["tag"], "quantization": m.get("quantization") or cfg["quantization"],
+            "tag": m["tag"], "revision": m.get("revision", ""),
+            "quantization": m.get("quantization") or cfg["quantization"],
+            "bits_per_weight": m.get("bits_per_weight"),
             "download_size_gb": r((pulled.get(mk, {}).get("size_bytes") or 0) / 1e9),
-            "memory_loaded_gb": r(ps["size"] / 1e9) if ps.get("size") else
-            "not recorded (run interrupted before saving)",
-            "on_gpu_pct": r(100 * (ps.get("size_vram") or 0) / ps["size"], 0)
-            if ps.get("size") else None,
-            "context_per_request": ps.get("context_length"),
+            "memory_loaded_gb": r(loaded * 2**30 / 1e9) if loaded else
+            r(ps["size"] / 1e9) if ps.get("size") else "not recorded",
+            "kv_cache_tokens": sv.get("kv_cache_tokens") or sv.get("kv_cache_tokens_logged"),
+            "context_per_request": sv.get("context") or ps.get("context_length"),
+            "server_startup_s": sv.get("startup_s"),
             "load_plus_warmup_s": info.get(mk, {}).get("load_plus_warmup_s"),
             "single_user_decode_tps": r(common.mean([s["decode_tps_per_req_mean"] for s in n1])),
             "single_user_prefill_tps": longest.get("prefill_tps_est_mean"),
@@ -268,15 +272,18 @@ def build(run_dir, wall_csv=None):
                 scaling.append(row)
 
     # ---- Parameters ----------------------------------------------------------------------
-    srv = env["server"]
+    srv = env.get("server") or {}
     P = []
 
     def add(section, name, value, note=""):
         P.append({"section": section, "parameter": name, "value": value, "note": note})
 
-    if cfg["server"]["mode"] != "docker":
-        add("DEVIATION", "Not run in Docker", cfg["server"]["deviation_note"],
+    if cfg["server"].get("mode") not in (None, "docker"):        # 1.0 (Ollama) runs
+        add("DEVIATION", "Not run in Docker", cfg["server"].get("deviation_note", ""),
             "Same Ollama version as the pinned image; see the Server rows for exact values")
+    if cfg.get("quantization_deviation"):
+        add("DEVIATION", "Quantization", cfg["quantization_deviation"],
+            f"build publisher: {cfg.get('quantization_publisher', '')}")
     add("Protocol", "version", env.get("protocol_version", "pre-1.0"),
         "bench/benchmark-protocol.md; results line up only within the same version")
     if env.get("study"):
@@ -284,8 +291,9 @@ def build(run_dir, wall_csv=None):
         add("Protocol", "study", env.get("study_id", ""), st.get("notes", ""))
         add("Protocol", "member", st.get("member", ""))
         add("Protocol", "machine", st.get("machine", ""), st.get("hardware", ""))
-    add("Protocol", "QUANTIZATION (member's choice)", env.get("quantization") or cfg["quantization"],
-        "compare studies with different quantizations only with this in mind")
+    add("Protocol", "QUANTIZATION (study build format)", env.get("quantization") or cfg["quantization"],
+        "compare studies with different quantizations only with this in mind; publisher "
+        + str(cfg.get("quantization_publisher", "")))
     if env.get("protocol_deviations"):
         add("Protocol", "DEVIATIONS", "; ".join(env["protocol_deviations"]),
             "this run does not follow the protocol")
@@ -301,19 +309,29 @@ def build(run_dir, wall_csv=None):
     add("Run", "models run", " ".join(models_run))
     for s in run.get("models_skipped", []):
         add("Run", f"model NOT run: {s['key']}", s["reason"])
-    add("Run", "other GPU processes at start", str(env["other_gpu_processes_at_start"] or "none"))
-    add("Server", "backend type", cfg["backend"]["type"])
-    add("Server", "base_url (OpenAI-compatible)", cfg["backend"]["base_url"])
-    add("Server", "mode", srv.get("mode"))
-    add("Server", "Ollama version (reported by server)", env["server_version_reported"])
+    add("Run", "other GPU processes at start", str(env.get("other_gpu_processes_at_start") or "none"))
+    add("Server", "engine", env.get("engine") or cfg["backend"]["type"])
+    if env.get("slots") not in (None, ""):
+        add("Server", "parallel slots (= users)", env["slots"], "server restarted per level")
+    for sv in env.get("servers") or []:
+        tag = f"{sv.get('model')} {sv.get('phase', 'speed')}"
+        add("Server", f"{tag}: version", sv.get("engine_version", ""),
+            f"ready in {sv.get('startup_s')} s")
+        add("Server", f"{tag}: command", " ".join(sv.get("command") or []),
+            "every server flag; the rest are engine defaults")
+        for k in ("kv_cache_dtype", "kv_cache_tokens", "kv_cache_tokens_logged",
+                  "weights_loaded_gib", "kv_cache_available_gib", "max_concurrency_logged",
+                  "prefix_caching"):
+            if sv.get(k) not in (None, ""):
+                add("Server", f"{tag}: {k}", sv[k])
+    if env.get("server_version_reported"):                       # 1.0 (Ollama) runs
+        add("Server", "Ollama version (reported by server)", env["server_version_reported"])
     for k in ("binary_path", "binary_sha256", "release_asset_sha256_pinned", "image",
               "docker_image_digest"):
         if srv.get(k):
             add("Server", k, srv[k])
-    for k, v in sorted(env["server_env_set_by_harness"].items()):
+    for k, v in sorted((env.get("server_env_set_by_harness") or {}).items()):
         add("Server env (speed phase)", k, v, "set explicitly by the harness")
-    add("Server env (speed phase)", "full effective settings (from server log)",
-        env["server_effective_config_logged"], "everything not listed above was left at default")
     for k, v in cfg["request"].items():
         add("Request", k, str(v))
     add("Sweep", "concurrency_levels", " ".join(map(str, cfg["sweep"]["concurrency_levels"])))
@@ -335,8 +353,13 @@ def build(run_dir, wall_csv=None):
         "highest tested level that passes, with every lower level passing too")
     add("Quantization", "all models", cfg["quantization"])
     for m in env["models"]:
-        add("Model", m["tag"], "manifest sha256:" + str(m.get("ollama_digest", "")),
-            "verified against pin: " + str(m.get("ok", "n/a")))
+        if m.get("revision"):
+            add("Model", m["tag"], f"revision {m['revision']}",
+                f"{m.get('pinned_weight_files')} weight files verified against pinned sha256: "
+                f"{m.get('ok')} (rehashed: {m.get('rehashed')})")
+        else:                                                    # 1.0 (Ollama) runs
+            add("Model", m["tag"], "manifest sha256:" + str(m.get("ollama_digest", "")),
+                "verified against pin: " + str(m.get("ok", "n/a")))
         if m.get("model_blob_sha256_on_disk"):
             add("Model", m["tag"] + " weights file", "sha256:" + m["model_blob_sha256_on_disk"],
                 "hashed on disk")
@@ -358,10 +381,10 @@ def build(run_dir, wall_csv=None):
     q = cfg["quality"]
     if run.get("quality"):
         add("Quality", "tasks", ", ".join(q["tasks"]))
-        add("Quality", "limit per task", q.get("limit") or "none (full)")
+        add("Quality", "limit per task", q.get("limit") or str(q.get("limits") or "none (full)"))
         add("Quality", "gen_kwargs", q["gen_kwargs"])
-        add("Quality", "server env for quality phase", str(q.get("server_env")),
-            "server is restarted with these before lm-eval")
+        add("Quality", "quality server", f"{q.get('slots')} slots, context {q.get('context')}, "
+            f"max_gen_toks {q.get('max_gen_toks')}", "server restarted for the quality phase")
         add("Quality", "lm-eval version", common.sh(
             f"{common.REPO}/.venv/bin/python -c 'import lm_eval; print(lm_eval.__version__)'"))
     else:
@@ -385,7 +408,7 @@ def build(run_dir, wall_csv=None):
                             "status": f"lm-eval exited with code {qr['returncode']}; see log"})
     environment = []
     for k, v in env.items():
-        if k in ("models", "server_env_set_by_harness"):
+        if k in ("models", "server_env_set_by_harness", "servers"):
             continue
         if isinstance(v, dict):
             for k2, v2 in v.items():

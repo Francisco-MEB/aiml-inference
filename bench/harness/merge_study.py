@@ -34,7 +34,7 @@ def main():
         env = common.load_json(env_p)
         ov = env.get("cli_overrides") or {}
         levels = ov.get("concurrency_levels") or []
-        slots = str(env.get("server_env_set_by_harness", {}).get("OLLAMA_NUM_PARALLEL", ""))
+        slots = common.slots_of(env)
         if len(levels) != 1 or slots != str(levels[0]):
             continue
         if env.get("protocol_deviations") and not a.include_deviations \

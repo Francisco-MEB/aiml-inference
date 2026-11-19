@@ -2,7 +2,7 @@
 
 The one-page map of what we've built, why, how it fits together, and what's still open. Step-by-step instructions live in the linked runbooks. **Keep this file current:** when you change a decision, a pinned version, or the debt register, update it in the same PR.
 
-*State as of 2026-11-17, branch `dev`.* A formatted version of this memo is published as a private Claude page (ask Francisco for access).
+*State as of 2026-11-19, branch `dev`.* A formatted version of this memo is published as a private Claude page (ask Francisco for access).
 
 ---
 
@@ -42,6 +42,8 @@ CRC funds **$50k of hardware** for **two competing inference clusters**. Both ge
 | Permissions | Ask before edits and shell | Same safety model as Claude Code | Per project |
 | Lockdown | Campus provider only; no share, update checks, web search | Code and conversations stay on campus | CRC policy |
 | Git | Work on `dev`, PRs to `main` | Team preference | n/a |
+| Club benchmark | `aiml-bench/2.0` (`bench/`): vLLM on Dells, MLX on Macs, one study = family × machine × one quantization, small → large; thinking off; slots = users; core quality via lm-eval once per build | Same numbers from every member; Ollama isn't what campus would serve; quality belongs to the build, not the machine | Thinking-on quality, ShareGPT traffic, LiveCodeBench / HLE / MRCR / ALCE, two-node runs |
+| Benchmark models | `bench/catalog/models.json`: every build pinned to a commit, per engine, highest precision first; members can't improvise tags | Reproducible and comparable small → large | New families or builds (catalog `pin`) |
 
 ## 4. Architecture
 
@@ -73,7 +75,10 @@ CRC funds **$50k of hardware** for **two competing inference clusters**. Both ge
 | PyTorch / Transformers / FlashInfer | 2.14.0+cu130 / 5.20.2 / 0.7.2.post1 | `serving/vllm/uv.lock` | yes |
 | Model | Qwen/Qwen3.5-35B-A3B-FP8 @ `9d1823d2dee688a6b25e77009dc727688c44936e` | `serve.sh` `DEFAULT_REVISION` | yes |
 | OpenCode | v2.2.5 (30 Oct 2026), SHA-256 `5a528f42caf576c6cdece6a191eb273d3db54effa5518e0402684d8f8026aeb6` | `clients/install.sh` | yes |
-| Root env | `lm-eval[api]>=0.4.13`, `ollama>=0.6.3` | `pyproject.toml` + `uv.lock` | lockfile |
+| Root env | `lm-eval[api]>=0.4.13` (0.4.13 locked), `openpyxl==3.1.5`, `ollama>=0.6.3` | `pyproject.toml` + `uv.lock` | lockfile |
+| MLX (Macs) | mlx 0.32.4, mlx-lm 0.32.2, CPython 3.12 | `serving/mlx/pyproject.toml` + `uv.lock` | yes |
+| Benchmark protocol / catalog | `aiml-bench/2.0`; 74 builds pinned 2026-11-19 | `bench/harness/protocol.py`, `bench/catalog/models.json` | yes |
+| huggingface_hub CLI (downloads) | 2.4.0 | `bench/harness/pull_models.py` `HF_HUB_VERSION` | yes |
 | Claude Code plugins | superpowers 7.0.2, mattpocock-skills 1.3.1, frontend-design 1.1.1 | `.claude/settings.json` | marketplace |
 
 Caches:
@@ -93,6 +98,7 @@ Caches:
 | Chat client options | [`harness/README.md`](../harness/README.md) |
 | Eval method, results, raw data | [`coding-eval/README.md`](coding-eval/README.md), [`coding-eval/data/`](coding-eval/data/) |
 | Capacity benchmark: method, campus sizing, Python-vs-GPU bottleneck | [`capacity/README.md`](capacity/README.md), [`scripts/README.md`](../scripts/README.md) |
+| Club benchmark (every family, Dells and Macs): protocol, catalog, running a study | [`bench/README.md`](../bench/README.md), [`bench/benchmark-protocol.md`](../bench/benchmark-protocol.md), [`serving/mlx/README.md`](../serving/mlx/README.md) |
 | Run the eval | `evals/coding/run.sh` (see the header of that script) |
 | Conventions for Claude sessions | [`CLAUDE.md`](../CLAUDE.md) |
 
@@ -105,6 +111,8 @@ Caches:
 | Upgrade vLLM | Bump `vllm==` in `serving/vllm/pyproject.toml` (release ≥ 2 weeks old) → `uv lock && uv sync` → start the server → tool-call `curl` test ([runbook](running-vllm.md)) → eval. |
 | Upgrade OpenCode | See [`ndcode.md`](ndcode.md#how-its-built-for-maintainers). Validate the config with `opencode debug config` (zero "normalization diagnostic" warnings) and migrate deprecated keys. |
 | Fix an eval check | Edit `check.sh`, then `evals/coding/rescore.sh <output dir>` re-scores old runs without re-running agents. |
+| Add a model to the club benchmark | Add it to its family in `bench/catalog/models.json` (a build per engine and format) → `bench/harness/catalog.py pin` → `catalog.py plan <family> --machine dell` / `mac:<GiB>` → commit. |
+| Change the benchmark protocol | Edit `bench/benchmark-protocol.md` and `bench/harness/protocol.py` together, bump `VERSION`, run `bench/tests`. Old results stay, marked as another version. |
 
 ## 8. Measurements (2026-11-16, single node, shared)
 
@@ -142,6 +150,8 @@ During the coding eval, vLLM served ~90% of prompt tokens from its prefix cache 
 
 ## 10. Technical debt register
 
+**Paid down 2026-11-19:** the club benchmark moved from Ollama to vLLM/MLX (`aiml-bench/2.0`) with a pinned model catalog and a unit/end-to-end test suite for `bench/` (`bench/tests`, fake server, no GPU).
+
 **Paid down 2026-11-17:** the vLLM capacity benchmark (tools, chat + RAG runs, Python A/B).
 
 **Paid down 2026-11-16:** pinned the default model revision; CLAUDE.md refreshed; runbook has the 35B KV numbers; removed a tracked `.pyc`; OpenCode config cleaned to supported keys; raw eval data saved.
@@ -156,7 +166,11 @@ During the coding eval, vLLM served ~90% of prompt tokens from its prefix cache 
 | Project `opencode.json` can override campus settings | A repo could loosen permissions | low | Later: `OPENCODE_DISABLE_PROJECT_CONFIG` or managed policies |
 | `ndcode models`/`session` not standalone | Use the shared background service | low | Revisit if issues appear |
 | Installer is linux-arm64 only | No laptop installs | low | Pin hashes for other platforms (laptop milestone) |
-| No CI, no unit tests | Regressions caught only by hand/eval | medium | Test suite + shellcheck + CI workflow |
+| No CI; unit tests only for `bench/` | Regressions elsewhere caught only by hand/eval | medium | CI workflow running `bench/tests` + shellcheck |
+| Benchmark Mac (MLX) paths never run on a Mac | Preflight, power, launcher or vision-language MLX conversions may fail there | medium | Mac owners run the smoke test in `serving/mlx/README.md` before their first study |
+| Benchmark builds not all exercised on GB10 | NVFP4 / W4A16 / FP8 kernels on sm_121 had bugs in older vLLM; a build may fail to start or produce garbage | medium | Each first study per family: check server logs, thinking probe and GSM8K against published scores |
+| Benchmark 2.0 deferred items | Thinking-off quality understates reasoning models; no ShareGPT traffic, LiveCodeBench, HLE, MRCR, ALCE, agentic coding, Mac power | low | Phase 2 of the benchmark after the 2.0 results |
+| GLM benchmark builds are community W4A16 (cyankiwi) | Quantization quality not vendor-checked | low | Swap for a vendor 4-bit build when one fits a GB10 |
 | SSH key without passphrase on a shared box | Anyone with the Unix account can push | medium | `ssh-keygen -p -f ~/.ssh/id_ed25519` or a repo deploy key |
 | Stale branch `origin/worktree-init-project` | Clutter | low | Delete on GitHub |
 | Leftover local state | Unused uv Python 3.15; 9B weights (~19 GB) | low | `uv python uninstall 3.15`; keep 9B as fallback |
@@ -181,7 +195,7 @@ During the coding eval, vLLM served ~90% of prompt tokens from its prefix cache 
 1. **Two-Dell capacity:** two copies (one per GB10) vs one model split across both, same probe. Single-GB10 results are done ([`capacity/`](capacity/README.md)). Needs our vLLM env, the weights and SSH on the peer.
 2. **Managed service** (systemd, restarts, logs, health checks).
 3. **Campus gateway** (auth, keys, quotas, logs). Then network exposure and laptop installs of `ndcode`.
-4. **Model bake-off:** Qwen3-Coder-30B-A3B, gpt-oss-120b, then larger models on the bigger cluster, scored by the coding eval and the capacity benchmark.
+4. **Model bake-off:** the club benchmark (`aiml-bench/2.0`) runs every family small → large on each Dell and Mac (assignments: Dell 1 Will Carter, Dell 2 Gabriel, Mac Studio Brandon, Mac Minis Jeremy and Tyler, single node each); then the coding eval on the finalists.
 5. **Grow the eval** and add CI.
 
 ## 13. Glossary

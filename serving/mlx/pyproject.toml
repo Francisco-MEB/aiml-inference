@@ -1,0 +1,15 @@
+[project]
+name = "aiml-inference-mlx"
+version = "0.1.0"
+description = "Isolated environment for running MLX (mlx_lm.server) on Apple Silicon Macs for the club benchmark."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "mlx==0.32.4",
+    "mlx-lm==0.32.2",
+]
+
+[tool.uv]
+package = false
+# Apple Silicon only. The Dells run vLLM (serving/vllm), not MLX's CUDA build.
+environments = ["sys_platform == 'darwin' and platform_machine == 'arm64'"]
+python-preference = "only-managed"

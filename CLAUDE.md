@@ -7,13 +7,14 @@ Notre Dame CRC is funding $50k of hardware for two competing on-prem LLM inferen
 
 ## Environment
 - Nodes: Dell Pro GB10 (Grace ARM64 CPU + Blackwell GPU, ~128 GB unified memory). Assume **aarch64**: check that wheels and containers have arm64/sbsa builds.
-- Python ≥ 3.12 managed with **uv** (`uv run <script>`). Root env deps: `ollama`, `lm-eval[api]`. vLLM has its own env (see Layout).
-- Serving engines: **vLLM 0.33** is the campus server (`serving/vllm/serve.sh`: Qwen3.5-35B-A3B-FP8 pinned to a tested revision, tool calling, 128k context). The architecture group's per-node evals use Ollama with `q4_K_M` quants (see `architecture/week2.md`).
+- Python ≥ 3.12 managed with **uv** (`uv run <script>`). Root env deps: `lm-eval[api]`, `openpyxl`, `ollama` (examples only). vLLM and MLX have their own envs (see Layout).
+- Serving engines: **vLLM 0.33** is the campus server (`serving/vllm/serve.sh`: Qwen3.5-35B-A3B-FP8 pinned to a tested revision, tool calling, 128k context). The club benchmark (`bench/`, protocol `aiml-bench/2.0`) runs vLLM on the Dells and MLX on the Macs; Ollama is legacy (`bench/legacy/`).
 
 ## Layout
 - `architecture/`: per-node evals. Copy `base_eval.py` to add an eval (a function taking `model` and returning a metrics dict, added to `EVALS`).
 - `scripts/`: standalone, stdlib-only benchmark tools (e.g. `ollama_concurrency_probe.py`), documented in `scripts/README.md`.
-- `serving/vllm/`: **separate uv project** for vLLM (`cd serving/vllm && uv sync`). Don't add vllm/torch to the root `pyproject.toml`. Launch with `serve.sh` (env-var config).
+- `serving/vllm/`: **separate uv project** for vLLM (`cd serving/vllm && uv sync`). Don't add vllm/torch to the root `pyproject.toml`. Launch with `serve.sh` (env-var config). `serving/mlx/` is the same for MLX on Apple Silicon.
+- `bench/`: the club benchmark. Members run it through the `benchmark` skill. Models come only from `bench/catalog/models.json` (edit it, then `bench/harness/catalog.py pin`); the protocol (`bench/benchmark-protocol.md`) and `bench/harness/protocol.py` change together and bump the version. Tests: `.venv/bin/python -m unittest discover -s bench/tests` (no GPU needed).
 - `harness/`: stdlib-only clients for OpenAI-compatible servers (`chat.py`). Keep them engine-agnostic so the same client runs against vLLM, Ollama, or either cluster.
 - `clients/`: the `ndcode` distribution (pinned OpenCode + `opencode.json` campus config + `ndcode` launcher). **We don't build our own coding agent.** ND owns the platform (model, hardware, serving), and agents are swappable open-source clients. Keep the lockdown (campus provider only, no share/auto-update/websearch, ask before edits/shell). Pin OpenCode to releases ≥ 2 weeks old with a SHA-256.
 - `evals/coding/`: per-task `prompt.md` / optional `setup.sh` / `check.sh`, run by `run.sh` across agent "arms" in throwaway clones. Results summaries go in `docs/coding-eval/`.

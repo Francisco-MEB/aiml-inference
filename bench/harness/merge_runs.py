@@ -56,7 +56,7 @@ def main():
             cfg = common.load_json(d / "effective_config.json")
             run = common.load_json(d / "run.json") if (d / "run.json").is_file() else {}
             env0, cfg0 = env0 or env, cfg0 or cfg
-            slots = env["server_env_set_by_harness"].get("OLLAMA_NUM_PARALLEL")
+            slots = common.slots_of(env)
             rows = [r for r in read_csv(d / "requests.csv") if r["model_key"] == key]
             for r in rows:
                 r["model_key"] = variant
@@ -68,12 +68,14 @@ def main():
                     xcheck.append(x)
             infos += [dict(m, slots=slots) for m in run.get("models", []) if m["key"] == key]
             sources.append({"variant": variant, "run_id": env["run_id"],
-                            "OLLAMA_NUM_PARALLEL": slots,
+                            "slots": slots,
                             "levels": sorted({int(r["concurrency"]) for r in rows}),
                             "requests": len(rows), "git_commit": env["git_commit"],
                             "config_sha256": env["config_sha256"],
                             "cli_overrides": env["cli_overrides"],
-                            "complete_run": bool(run)})
+                            "complete_run": bool(run),
+                            "_servers": [sv for sv in env.get("servers", [])
+                                         if sv.get("model") == key]})
             if d not in seen_dirs:
                 seen_dirs.add(d)
                 p = read_csv(d / "power.csv")
@@ -92,6 +94,7 @@ def main():
         info = dict(infos[-1]) if infos else {"tag": base["tag"]}
         info["key"] = variant
         info["memory_by_slots"] = {m["slots"]: (m.get("ps_after_load") or [{}])[0].get("size")
+                                   or (m.get("server") or {}).get("kv_cache_tokens")
                                    for m in infos}
         minfo.append(info)
 
@@ -110,10 +113,12 @@ def main():
         write_csv(out / "power.csv", prow, list(prow[0]))
     env0 = dict(env0, run_id=out.name, models=mver, merged_from=sources)
     env0["cli_overrides"] = "see merged_from: one entry per source run"
-    env0["server_env_set_by_harness"] = dict(
-        env0["server_env_set_by_harness"],
-        OLLAMA_NUM_PARALLEL="varies by run: see merged_from (protocol studies use slots equal "
-                            "to the number of simultaneous users at each level)")
+    env0["slots"] = ("varies by run: see merged_from (protocol studies use slots equal to the "
+                     "number of simultaneous users at each level)")
+    env0["servers"] = [sv for s in sources for sv in s.pop("_servers", [])]
+    if "server_env_set_by_harness" in env0:                       # 1.0 (Ollama) runs
+        env0["server_env_set_by_harness"] = dict(
+            env0["server_env_set_by_harness"], OLLAMA_NUM_PARALLEL=env0["slots"])
     common.write_json(out / "env.json", env0)
     cfg0 = dict(cfg0, models=cfg_models)
     if qcfg:

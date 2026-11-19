@@ -1,0 +1,1276 @@
+{
+  "catalog_version": 1,
+  "_readme": "The models the club benchmarks, and the exact builds per engine. Edit the repos here; `python3 bench/harness/catalog.py pin` fills revision, weights_gb, format, bits, multimodal and gated from the Hugging Face API. Members never edit this: the benchmark skill reads it. Build options per engine are ordered from highest to lowest precision; plan_study() picks the highest one in which the family's largest model fits the machine (benchmark-protocol.md section 1).",
+  "families": {
+    "gemma": {
+      "label": "Google Gemma 4",
+      "thinking": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "note": "enable_thinking=false (Gemma 4 thinks only when asked)"
+      },
+      "vllm_args": [
+        "--reasoning-parser",
+        "gemma4"
+      ],
+      "models": {
+        "gemma4-e4b": {
+          "label": "Gemma 4 E4B",
+          "size_class": "small",
+          "arch": "dense",
+          "params_b": 8.0,
+          "active_params_b": 4.5
+        },
+        "gemma4-12b": {
+          "label": "Gemma 4 12B",
+          "size_class": "medium",
+          "arch": "dense",
+          "params_b": 12.0,
+          "active_params_b": 12.0
+        },
+        "gemma4-26b-a4b": {
+          "label": "Gemma 4 26B A4B",
+          "size_class": "medium",
+          "arch": "moe",
+          "params_b": 25.2,
+          "active_params_b": 3.8
+        },
+        "gemma4-31b": {
+          "label": "Gemma 4 31B",
+          "size_class": "large",
+          "arch": "dense",
+          "params_b": 31.0,
+          "active_params_b": 31.0
+        }
+      },
+      "builds": {
+        "vllm": [
+          {
+            "format": "bf16",
+            "publisher": "Google",
+            "models": {
+              "gemma4-e4b": {
+                "repo": "google/gemma-4-E4B-it",
+                "revision": "4ecc2ba63bcac23ba4a767fc87025b1450f84c9c",
+                "weights_gb": 15.99,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              },
+              "gemma4-12b": {
+                "repo": "google/gemma-4-12B-it",
+                "revision": "43c9d014b231474fa7212dbb48a762566c2b255d",
+                "weights_gb": 23.92,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              },
+              "gemma4-26b-a4b": {
+                "repo": "google/gemma-4-26B-A4B-it",
+                "revision": "4d7ae4984b7db7de8f8457170b3f1a419ee76d52",
+                "weights_gb": 51.61,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              },
+              "gemma4-31b": {
+                "repo": "google/gemma-4-31B-it",
+                "revision": "842da3794eaa0b77d5f08bae87a17459d91ff475",
+                "weights_gb": 62.55,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              }
+            }
+          },
+          {
+            "format": "nvfp4",
+            "publisher": "Red Hat AI",
+            "models": {
+              "gemma4-12b": {
+                "repo": "RedHatAI/gemma-4-12B-it-NVFP4",
+                "revision": "8965ad1c93dccb43e05e7882d98f2d32c0dd434d",
+                "weights_gb": 10.26,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "compressed-tensors"
+              },
+              "gemma4-26b-a4b": {
+                "repo": "RedHatAI/gemma-4-26B-A4B-it-NVFP4",
+                "revision": "5557756b8dce33ac72f2bd702b11729fdba3b839",
+                "weights_gb": 16.42,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "compressed-tensors"
+              },
+              "gemma4-31b": {
+                "repo": "RedHatAI/gemma-4-31B-it-NVFP4",
+                "revision": "5df75ccad9b74546f5be758a2a68acc2e16bbc9b",
+                "weights_gb": 23.27,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "compressed-tensors"
+              }
+            }
+          }
+        ],
+        "mlx": [
+          {
+            "format": "bf16",
+            "publisher": "mlx-community",
+            "models": {
+              "gemma4-e4b": {
+                "repo": "mlx-community/gemma-4-e4b-it-bf16",
+                "revision": "eec12d0899edea9b738ab1009af9159cdfd70d71",
+                "weights_gb": 15.88,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              },
+              "gemma4-31b": {
+                "repo": "mlx-community/gemma-4-31b-it-bf16",
+                "revision": "3cbbeca52de3125c5eed024d2e9f75b2434bfbbc",
+                "weights_gb": 62.55,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              }
+            }
+          },
+          {
+            "format": "8bit",
+            "publisher": "mlx-community",
+            "models": {
+              "gemma4-e4b": {
+                "repo": "mlx-community/gemma-4-e4b-it-8bit",
+                "revision": "4255b21bd9a9d3fc807ef7abd80373f5e3a52a73",
+                "weights_gb": 8.88,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "gemma4-12b": {
+                "repo": "mlx-community/gemma-4-12B-it-8bit",
+                "revision": "200bb6db075e137a4deb08838865ac4ddb86292e",
+                "weights_gb": 12.72,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "gemma4-26b-a4b": {
+                "repo": "mlx-community/gemma-4-26b-a4b-it-8bit",
+                "revision": "33c6d23798a0af159529890f79329206dbfbd73c",
+                "weights_gb": 27.95,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "gemma4-31b": {
+                "repo": "mlx-community/gemma-4-31b-it-8bit",
+                "revision": "f5f3dc92ab4af76724c36c21eb6bedadb3a851be",
+                "weights_gb": 33.76,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              }
+            }
+          },
+          {
+            "format": "4bit",
+            "publisher": "mlx-community",
+            "models": {
+              "gemma4-e4b": {
+                "repo": "mlx-community/gemma-4-e4b-it-4bit",
+                "revision": "475b9088d29754a3379866cf5aeb6b41acd313c2",
+                "weights_gb": 5.15,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "gemma4-12b": {
+                "repo": "mlx-community/gemma-4-12B-it-4bit",
+                "revision": "73bcf09092aa277861d5a191b989b666f7f32e8f",
+                "weights_gb": 6.74,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "gemma4-26b-a4b": {
+                "repo": "mlx-community/gemma-4-26b-a4b-it-4bit",
+                "revision": "0d77464eeb233a2da68ebf9d7dc4edaac7db956d",
+                "weights_gb": 15.34,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "gemma4-31b": {
+                "repo": "mlx-community/gemma-4-31b-it-4bit",
+                "revision": "696d436c404745a59f30e4939a658162b0a9e57f",
+                "weights_gb": 18.41,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "qwen": {
+      "label": "Alibaba Qwen",
+      "notes": "Mixed generations on purpose: NVIDIA publishes NVFP4 for Qwen3 8B (the newest small Qwen with an NVFP4 build), Qwen3.8 27B, Qwen3.6 35B-A3B and Qwen3.5 122B-A10B.",
+      "thinking": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "note": "enable_thinking=false"
+      },
+      "vllm_args": [
+        "--reasoning-parser",
+        "qwen3"
+      ],
+      "models": {
+        "qwen3-8b": {
+          "label": "Qwen3 8B",
+          "size_class": "small",
+          "arch": "dense",
+          "params_b": 8.2,
+          "active_params_b": 8.2
+        },
+        "qwen3.8-27b": {
+          "label": "Qwen3.8 27B",
+          "size_class": "medium",
+          "arch": "dense",
+          "params_b": 27.0,
+          "active_params_b": 27.0
+        },
+        "qwen3.6-35b-a3b": {
+          "label": "Qwen3.6 35B A3B",
+          "size_class": "medium",
+          "arch": "moe",
+          "params_b": 35.0,
+          "active_params_b": 3.0
+        },
+        "qwen3.5-122b-a10b": {
+          "label": "Qwen3.5 122B A10B",
+          "size_class": "large",
+          "arch": "moe",
+          "params_b": 122.0,
+          "active_params_b": 10.0
+        }
+      },
+      "builds": {
+        "vllm": [
+          {
+            "format": "fp8",
+            "publisher": "Qwen / NVIDIA",
+            "models": {
+              "qwen3-8b": {
+                "repo": "nvidia/Qwen3-8B-FP8",
+                "revision": "2cebc4c89e25abc17668c81b01dceaf3d8b914d5",
+                "weights_gb": 9.44,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "modelopt"
+              },
+              "qwen3.8-27b": {
+                "repo": "Qwen/Qwen3.8-27B-FP8",
+                "revision": "c3a462cc3d38cf351f3b26cbd763469eeb74ef81",
+                "weights_gb": 30.87,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "fp8"
+              },
+              "qwen3.6-35b-a3b": {
+                "repo": "Qwen/Qwen3.6-35B-A3B-FP8",
+                "revision": "c653bba46dfa06e9658dcc0b0dc87fe4685f14a2",
+                "weights_gb": 37.46,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "fp8"
+              },
+              "qwen3.5-122b-a10b": {
+                "repo": "Qwen/Qwen3.5-122B-A10B-FP8",
+                "revision": "a099dee70ccfcd8d5dda56aaa0b60cb8ecadabc9",
+                "weights_gb": 127.16,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "fp8"
+              }
+            }
+          },
+          {
+            "format": "nvfp4",
+            "publisher": "NVIDIA",
+            "models": {
+              "qwen3-8b": {
+                "repo": "nvidia/Qwen3-8B-NVFP4",
+                "revision": "ccd10a893cbca613259517c3efe08e151ddf2b8e",
+                "weights_gb": 6.4,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "modelopt"
+              },
+              "qwen3.8-27b": {
+                "repo": "nvidia/Qwen3.8-27B-NVFP4",
+                "revision": "482ca0f3832238542f8f5295dde86b5f22711d80",
+                "weights_gb": 21.92,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "modelopt"
+              },
+              "qwen3.6-35b-a3b": {
+                "repo": "nvidia/Qwen3.6-35B-A3B-NVFP4",
+                "revision": "1355db6a052410cfd62085d94b58866fd0f2c3c5",
+                "weights_gb": 23.42,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "modelopt"
+              },
+              "qwen3.5-122b-a10b": {
+                "repo": "nvidia/Qwen3.5-122B-A10B-NVFP4",
+                "revision": "98915d837c4e7c87ac8296d02e89de19b3207e6d",
+                "weights_gb": 83.5,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "modelopt"
+              }
+            }
+          }
+        ],
+        "mlx": [
+          {
+            "format": "bf16",
+            "publisher": "mlx-community",
+            "models": {
+              "qwen3-8b": {
+                "repo": "mlx-community/Qwen3-8B-bf16",
+                "revision": "85dd0f16bfe491befbc9cf0b4e966664236e5050",
+                "weights_gb": 16.38,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              },
+              "qwen3.8-27b": {
+                "repo": "mlx-community/Qwen3.8-27B-bf16",
+                "revision": "379e708436c8372e6ac00b77de31622a0e6bc801",
+                "weights_gb": 54.71,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              },
+              "qwen3.6-35b-a3b": {
+                "repo": "mlx-community/Qwen3.6-35B-A3B-bf16",
+                "revision": "04bbe07c3ed2d93cbf832f523fea344bca1d0fcf",
+                "weights_gb": 70.21,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              },
+              "qwen3.5-122b-a10b": {
+                "repo": "mlx-community/Qwen3.5-122B-A10B-bf16",
+                "revision": "88247879c511c13bc07889931cd242d7f783069e",
+                "weights_gb": 245.13,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              }
+            }
+          },
+          {
+            "format": "8bit",
+            "publisher": "mlx-community",
+            "models": {
+              "qwen3-8b": {
+                "repo": "mlx-community/Qwen3-8B-8bit",
+                "revision": "48a0b75b1ae72503e21e1558d040bc227510ff06",
+                "weights_gb": 8.7,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "qwen3.8-27b": {
+                "repo": "mlx-community/Qwen3.8-27B-8bit",
+                "revision": "1159008f24a3f97d7afd366fcfee9a79f3bd2b94",
+                "weights_gb": 29.5,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "qwen3.6-35b-a3b": {
+                "repo": "mlx-community/Qwen3.6-35B-A3B-8bit",
+                "revision": "e06a74e6236a60c8367e1a3214e83d8b61b637b0",
+                "weights_gb": 37.72,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "qwen3.5-122b-a10b": {
+                "repo": "mlx-community/Qwen3.5-122B-A10B-8bit",
+                "revision": "2a6260e0a7c3e80a1acc401999372aadeb870cff",
+                "weights_gb": 130.65,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              }
+            }
+          },
+          {
+            "format": "4bit",
+            "publisher": "mlx-community",
+            "models": {
+              "qwen3-8b": {
+                "repo": "mlx-community/Qwen3-8B-4bit",
+                "revision": "545dc4251c05440727734bcd94334791f6ab0192",
+                "weights_gb": 4.61,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "qwen3.8-27b": {
+                "repo": "mlx-community/Qwen3.8-27B-4bit",
+                "revision": "b935172e4bb5dcd0543774a34748fb92422e3027",
+                "weights_gb": 16.05,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "qwen3.6-35b-a3b": {
+                "repo": "mlx-community/Qwen3.6-35B-A3B-4bit",
+                "revision": "38740b847e4cb78f352aba30aa41c76e08e6eb46",
+                "weights_gb": 20.4,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "qwen3.5-122b-a10b": {
+                "repo": "mlx-community/Qwen3.5-122B-A10B-4bit",
+                "revision": "e9c67b08899964be5fdd069bb1b4bc8907fe68f5",
+                "weights_gb": 69.59,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "gpt-oss": {
+      "label": "OpenAI gpt-oss",
+      "thinking": {
+        "request_extra": {
+          "reasoning_effort": "low"
+        },
+        "cannot_disable": true,
+        "note": "cannot be turned off: reasoning_effort=low, the lowest setting"
+      },
+      "vllm_args": [
+        "--reasoning-parser",
+        "openai_gptoss"
+      ],
+      "models": {
+        "gpt-oss-20b": {
+          "label": "gpt-oss 20B",
+          "size_class": "small",
+          "arch": "moe",
+          "params_b": 21.0,
+          "active_params_b": 3.6
+        },
+        "gpt-oss-120b": {
+          "label": "gpt-oss 120B",
+          "size_class": "large",
+          "arch": "moe",
+          "params_b": 117.0,
+          "active_params_b": 5.1
+        }
+      },
+      "builds": {
+        "vllm": [
+          {
+            "format": "mxfp4",
+            "publisher": "OpenAI (native format)",
+            "models": {
+              "gpt-oss-20b": {
+                "repo": "openai/gpt-oss-20b",
+                "revision": "6cee5e81ee83917806bbde320786a8fb61efebee",
+                "weights_gb": 13.76,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mxfp4"
+              },
+              "gpt-oss-120b": {
+                "repo": "openai/gpt-oss-120b",
+                "revision": "b5c939de8f754692c1647ca79fbf85e8c1e70f8a",
+                "weights_gb": 65.25,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mxfp4"
+              }
+            }
+          }
+        ],
+        "mlx": [
+          {
+            "format": "mxfp4",
+            "publisher": "mlx-community (MXFP4 experts, 8-bit attention)",
+            "models": {
+              "gpt-oss-20b": {
+                "repo": "mlx-community/gpt-oss-20b-MXFP4-Q8",
+                "revision": "773a7da77e569019bb0fd17a554b263738d669a3",
+                "weights_gb": 12.08,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "gpt-oss-120b": {
+                "repo": "mlx-community/gpt-oss-120b-MXFP4-Q8",
+                "revision": "81e5ac3ad0af6efb1298a8e8c7a10ed2990c137b",
+                "weights_gb": 63.39,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "llama": {
+      "label": "Meta Llama",
+      "notes": "Llama 4 Scout is the only Llama 4 that fits one node; Llama 3.1 8B and 3.3 70B give the small and medium dense points.",
+      "thinking": {
+        "note": "no reasoning mode"
+      },
+      "vllm_args": [],
+      "models": {
+        "llama3.1-8b": {
+          "label": "Llama 3.1 8B Instruct",
+          "size_class": "small",
+          "arch": "dense",
+          "params_b": 8.0,
+          "active_params_b": 8.0
+        },
+        "llama3.3-70b": {
+          "label": "Llama 3.3 70B Instruct",
+          "size_class": "medium",
+          "arch": "dense",
+          "params_b": 70.6,
+          "active_params_b": 70.6
+        },
+        "llama4-scout": {
+          "label": "Llama 4 Scout 17B-16E",
+          "size_class": "large",
+          "arch": "moe",
+          "params_b": 109.0,
+          "active_params_b": 17.0
+        }
+      },
+      "builds": {
+        "vllm": [
+          {
+            "format": "nvfp4",
+            "publisher": "NVIDIA",
+            "models": {
+              "llama3.1-8b": {
+                "repo": "nvidia/Llama-3.1-8B-Instruct-NVFP4",
+                "revision": "bdb54e24298451af785c0ac63c1b485e9b7400a2",
+                "weights_gb": 6.03,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "modelopt"
+              },
+              "llama3.3-70b": {
+                "repo": "nvidia/Llama-3.3-70B-Instruct-NVFP4",
+                "revision": "f792b707002f2c613e0729c6b37bbcedc4efa94e",
+                "weights_gb": 42.71,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "fp8"
+              },
+              "llama4-scout": {
+                "repo": "nvidia/Llama-4-Scout-17B-16E-Instruct-NVFP4",
+                "revision": "9417590c9bc99b359f3ac66d1346ecd54249888e",
+                "weights_gb": 65.35,
+                "multimodal": true,
+                "gated": "auto",
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "modelopt"
+              }
+            }
+          }
+        ],
+        "mlx": [
+          {
+            "format": "bf16",
+            "publisher": "mlx-community",
+            "models": {
+              "llama3.1-8b": {
+                "repo": "mlx-community/Meta-Llama-3.1-8B-Instruct-bf16",
+                "revision": "f8311090f9ee47782b6f094984a20c856eb841d6",
+                "weights_gb": 16.06,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              },
+              "llama3.3-70b": {
+                "repo": "mlx-community/Llama-3.3-70B-Instruct-bf16",
+                "revision": "7ced2d99aa416177f4a9b582bb1d7f6f45457e44",
+                "weights_gb": 141.11,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              },
+              "llama4-scout": {
+                "repo": "mlx-community/meta-llama-Llama-4-Scout-17B-16E-Instruct-bf16",
+                "revision": "7d7852a351608e09dfc4164ec0dd9387c40ae795",
+                "weights_gb": 217.28,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "unknown"
+              }
+            }
+          },
+          {
+            "format": "8bit",
+            "publisher": "mlx-community",
+            "models": {
+              "llama3.1-8b": {
+                "repo": "mlx-community/Meta-Llama-3.1-8B-Instruct-8bit",
+                "revision": "142d428004044c37c441272c91316251d9aecc58",
+                "weights_gb": 8.53,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "f16"
+              },
+              "llama3.3-70b": {
+                "repo": "mlx-community/Llama-3.3-70B-Instruct-8bit",
+                "revision": "c5bfd839cd4cda0e5a39a97e00218d9c56e468af",
+                "weights_gb": 74.96,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "llama4-scout": {
+                "repo": "mlx-community/Llama-4-Scout-17B-16E-Instruct-8bit",
+                "revision": "71083c312662cf2c4665cc72702e0d7f59dc1a35",
+                "weights_gb": 115.43,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "unknown"
+              }
+            }
+          },
+          {
+            "format": "4bit",
+            "publisher": "mlx-community",
+            "models": {
+              "llama3.1-8b": {
+                "repo": "mlx-community/Meta-Llama-3.1-8B-Instruct-4bit",
+                "revision": "241a666dad6cb93c8ff213d39a7f34a36bf26db4",
+                "weights_gb": 4.52,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "f16"
+              },
+              "llama3.3-70b": {
+                "repo": "mlx-community/Llama-3.3-70B-Instruct-4bit",
+                "revision": "de2dfaf56839b7d0e834157d2401dee02726874d",
+                "weights_gb": 39.69,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "llama4-scout": {
+                "repo": "mlx-community/Llama-4-Scout-17B-16E-Instruct-4bit",
+                "revision": "f89d3ebf0bb8f9b512d6c732aff83937deb55c3e",
+                "weights_gb": 61.12,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "unknown"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "muse": {
+      "label": "Meta Muse",
+      "notes": "Muse Glimmer 30B is the only Muse that fits one node (Muse Spark Open is 816B).",
+      "thinking": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "note": "enable_thinking=false (unverified for Muse; the thinking probe records what comes back)"
+      },
+      "vllm_args": [
+        "--reasoning-parser",
+        "muse_glimmer"
+      ],
+      "models": {
+        "muse-glimmer-30b": {
+          "label": "Muse Glimmer 30B",
+          "size_class": "medium",
+          "arch": "dense",
+          "params_b": 29.6,
+          "active_params_b": 29.6
+        }
+      },
+      "builds": {
+        "vllm": [
+          {
+            "format": "bf16",
+            "publisher": "Meta",
+            "models": {
+              "muse-glimmer-30b": {
+                "repo": "meta-models/Muse-Glimmer-30B",
+                "revision": "1297fd7dfeac4598948a5d15886968435c81c2b7",
+                "weights_gb": 59.55,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              }
+            }
+          },
+          {
+            "format": "nvfp4",
+            "publisher": "NVIDIA",
+            "models": {
+              "muse-glimmer-30b": {
+                "repo": "nvidia/Muse-Glimmer-30B-NVFP4",
+                "revision": "47818374517751c48c55cde2621594926b1888b6",
+                "weights_gb": 24.67,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "modelopt"
+              }
+            }
+          }
+        ],
+        "mlx": [
+          {
+            "format": "bf16",
+            "publisher": "mlx-community",
+            "models": {
+              "muse-glimmer-30b": {
+                "repo": "mlx-community/Muse-Glimmer-30B-bf16",
+                "revision": "904079a1a494209b7b3bbd5f9eff1f36228398df",
+                "weights_gb": 59.55,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              }
+            }
+          },
+          {
+            "format": "8bit",
+            "publisher": "mlx-community",
+            "models": {
+              "muse-glimmer-30b": {
+                "repo": "mlx-community/Muse-Glimmer-30B-8bit",
+                "revision": "679c45e1b331a6514a6e38076a353cc5fed21bf6",
+                "weights_gb": 33.38,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              }
+            }
+          },
+          {
+            "format": "4bit",
+            "publisher": "mlx-community",
+            "models": {
+              "muse-glimmer-30b": {
+                "repo": "mlx-community/Muse-Glimmer-30B-4bit",
+                "revision": "3e7677d7a40d348a3daba263a2b1c0aa41910710",
+                "weights_gb": 19.41,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "mistral": {
+      "label": "Mistral",
+      "notes": "Ministral 3 14B has no NVFP4 build, so it is left out of NVFP4 studies (reported, not substituted).",
+      "thinking": {
+        "note": "no reasoning mode in these instruct models"
+      },
+      "vllm_args": [],
+      "models": {
+        "ministral3-14b": {
+          "label": "Ministral 3 14B Instruct",
+          "size_class": "small",
+          "arch": "dense",
+          "params_b": 14.0,
+          "active_params_b": 14.0
+        },
+        "mistral-small3.2-24b": {
+          "label": "Mistral Small 3.2 24B Instruct",
+          "size_class": "medium",
+          "arch": "dense",
+          "params_b": 24.0,
+          "active_params_b": 24.0
+        },
+        "mistral-small4-119b": {
+          "label": "Mistral Small 4 119B",
+          "size_class": "large",
+          "arch": "moe",
+          "params_b": 119.0,
+          "active_params_b": 6.5
+        }
+      },
+      "builds": {
+        "vllm": [
+          {
+            "format": "nvfp4",
+            "publisher": "Red Hat AI / Mistral AI",
+            "models": {
+              "mistral-small3.2-24b": {
+                "repo": "RedHatAI/Mistral-Small-3.2-24B-Instruct-2506-NVFP4",
+                "revision": "5102662a785ad4f2c47eb54624bf3132ee620a58",
+                "weights_gb": 16.07,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "compressed-tensors"
+              },
+              "mistral-small4-119b": {
+                "repo": "mistralai/Mistral-Small-4-119B-2603-NVFP4",
+                "revision": "45331841b631f4e281df8e959ea3cc9beb84298a",
+                "weights_gb": 70.81,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "unknown"
+              }
+            }
+          }
+        ],
+        "mlx": [
+          {
+            "format": "bf16",
+            "publisher": "mlx-community",
+            "models": {
+              "mistral-small3.2-24b": {
+                "repo": "mlx-community/Mistral-Small-3.2-24B-Instruct-2506-bf16",
+                "revision": "ef3198731187eca81b2665b7deed9d8507c5bb70",
+                "weights_gb": 47.14,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              },
+              "mistral-small4-119b": {
+                "repo": "mlx-community/Mistral-Small-4-119B-2603-bf16",
+                "revision": "7ec27691109c81eed0552e1bd74bda7d1c0bb563",
+                "weights_gb": 238.8,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*",
+                  "consolidated*"
+                ],
+                "detected_format": "fp8"
+              }
+            }
+          },
+          {
+            "format": "8bit",
+            "publisher": "mlx-community",
+            "models": {
+              "mistral-small3.2-24b": {
+                "repo": "mlx-community/Mistral-Small-3.2-24B-Instruct-2506-8bit",
+                "revision": "1db835463eb0f953019af1048077b90403b70424",
+                "weights_gb": 25.05,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "mistral-small4-119b": {
+                "repo": "mlx-community/Mistral-Small-4-119B-2603-8bit",
+                "revision": "0c9605862bdd1b8b6e3f7d503bbf95a59b89c039",
+                "weights_gb": 127.24,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*",
+                  "consolidated*"
+                ],
+                "detected_format": "mlx-affine"
+              }
+            }
+          },
+          {
+            "format": "4bit",
+            "publisher": "mlx-community",
+            "models": {
+              "mistral-small3.2-24b": {
+                "repo": "mlx-community/Mistral-Small-3.2-24B-Instruct-2506-4bit",
+                "revision": "2a1d5eabfc504747bdc24178394821a1efc0edde",
+                "weights_gb": 13.26,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "mistral-small4-119b": {
+                "repo": "mlx-community/Mistral-Small-4-119B-2603-4bit",
+                "revision": "87b1249207734f029ec9dcefab80eabedfa6b812",
+                "weights_gb": 67.75,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*",
+                  "consolidated*"
+                ],
+                "detected_format": "mlx-affine"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "glm": {
+      "label": "Zhipu GLM",
+      "notes": "No vendor 4-bit GLM fits one GB10; the Dell study uses community W4A16 builds (cyankiwi), recorded as a deviation.",
+      "thinking": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "note": "enable_thinking=false"
+      },
+      "vllm_args": [
+        "--reasoning-parser",
+        "glm45"
+      ],
+      "models": {
+        "glm4.7-flash": {
+          "label": "GLM 4.7 Flash 30B A3B",
+          "size_class": "medium",
+          "arch": "moe",
+          "params_b": 30.0,
+          "active_params_b": 3.0,
+          "vllm_args": [
+            "--reasoning-parser",
+            "glm47"
+          ]
+        },
+        "glm4.5-air": {
+          "label": "GLM 4.5 Air 106B A12B",
+          "size_class": "large",
+          "arch": "moe",
+          "params_b": 106.0,
+          "active_params_b": 12.0
+        }
+      },
+      "builds": {
+        "vllm": [
+          {
+            "format": "w4a16",
+            "publisher": "cyankiwi (community)",
+            "deviation": "community quantization, no vendor 4-bit build fits",
+            "models": {
+              "glm4.7-flash": {
+                "repo": "cyankiwi/GLM-4.7-Flash-AWQ-4bit",
+                "revision": "f2af2359081b56d020f550c3314a54669301979c",
+                "weights_gb": 20.17,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "compressed-tensors"
+              },
+              "glm4.5-air": {
+                "repo": "cyankiwi/GLM-4.5-Air-AWQ-4bit",
+                "revision": "09dd844cc5d7a00171fe39a487c813b737225188",
+                "weights_gb": 63.4,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "compressed-tensors"
+              }
+            }
+          }
+        ],
+        "mlx": [
+          {
+            "format": "bf16",
+            "publisher": "mlx-community",
+            "models": {
+              "glm4.7-flash": {
+                "repo": "mlx-community/GLM-4.7-Flash-bf16",
+                "revision": "8a41c558f63134c7d08f58f9c91b83183d214763",
+                "weights_gb": 59.89,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              },
+              "glm4.5-air": {
+                "repo": "mlx-community/GLM-4.5-Air-bf16",
+                "revision": "1753b3269c9e3cb62ba3cbaf0ab6433d69784592",
+                "weights_gb": 213.7,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              }
+            }
+          },
+          {
+            "format": "8bit",
+            "publisher": "mlx-community",
+            "models": {
+              "glm4.7-flash": {
+                "repo": "mlx-community/GLM-4.7-Flash-8bit",
+                "revision": "b3a202c6df57f7297fb351486938952352dcd25a",
+                "weights_gb": 31.82,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "glm4.5-air": {
+                "repo": "mlx-community/GLM-4.5-Air-8bit",
+                "revision": "ca44c769a97034e91466f2a524b6ef2c28eb3c1f",
+                "weights_gb": 113.55,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              }
+            }
+          },
+          {
+            "format": "4bit",
+            "publisher": "mlx-community",
+            "models": {
+              "glm4.7-flash": {
+                "repo": "mlx-community/GLM-4.7-Flash-4bit",
+                "revision": "1454cffb1a21737e162f508e5bc70be9def89276",
+                "weights_gb": 16.85,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "glm4.5-air": {
+                "repo": "mlx-community/GLM-4.5-Air-4bit",
+                "revision": "60837794f3caafc4682dd1a9188a82c55a9100ef",
+                "weights_gb": 60.14,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

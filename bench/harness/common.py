@@ -10,7 +10,7 @@ import urllib.request
 
 BENCH = pathlib.Path(__file__).resolve().parents[1]   # bench/
 REPO = BENCH.parent
-RESULTS = BENCH / "results"
+RESULTS = pathlib.Path(os.environ.get("BENCH_RESULTS") or BENCH / "results")   # env: tests
 
 
 def sha256_file(path, chunk=1 << 22):
@@ -107,13 +107,14 @@ def load_prompts(cfg):
 
 def chat_stream(base_url, model, messages, req):
     """One streaming request against an OpenAI-compatible /chat/completions endpoint.
-    Timing is client-side, so it means the same thing for Ollama, vLLM or anything else."""
+    Timing is client-side, so it means the same thing for vLLM, MLX or anything else."""
     body = {
         "model": model, "messages": messages, "stream": True,
         "stream_options": {"include_usage": True},
-        "temperature": req["temperature"], "seed": req["seed"],
-        "max_tokens": req["max_tokens"],
+        "temperature": req["temperature"], "max_tokens": req["max_tokens"],
     }
+    if "seed" in req:              # 1.0 configs only; 2.0 sends no seed (protocol.REQUEST)
+        body["seed"] = req["seed"]
     body.update(req.get("extra_body") or {})
     r = urllib.request.Request(base_url.rstrip("/") + "/chat/completions",
                                data=json.dumps(body).encode(),
@@ -168,49 +169,11 @@ def chat_stream(base_url, model, messages, req):
     return out
 
 
-# ---- server control (only used for backend.type == "ollama") ---------------------------------
+# ---- run bookkeeping ----------------------------------------------------------------------
 
-def server_env(cfg, overrides=None):
-    env = dict(cfg["server"]["env"])
-    env.update(overrides or {})
-    env["OLLAMA_BENCH_VERSION"] = cfg["server"]["ollama_version"]
-    env["OLLAMA_BENCH_PORT"] = str(cfg["server"]["port"])
-    env["OLLAMA_MODELS"] = os.path.expanduser(cfg["server"]["models_dir"])
-    return env
-
-
-def _server_script(cfg):
-    mode = cfg["server"]["mode"]
-    if mode == "external":
-        return None
-    return str(BENCH / "server" / ("serve_docker.sh" if mode == "docker" else "serve_native.sh"))
-
-
-def start_server(cfg, env, log_path):
-    script = _server_script(cfg)
-    if script is None:
-        return
-    full = dict(os.environ)
-    full.update(env)
-    full["OLLAMA_BENCH_LOG"] = str(log_path)
-    r = subprocess.run([script, "start"], env=full, capture_output=True, text=True,
-                       check=False)
-    print(r.stdout.strip() or r.stderr.strip())
-    if r.returncode != 0:
-        raise SystemExit(f"server start failed: {r.stderr.strip()}")
-
-
-def stop_server(cfg):
-    script = _server_script(cfg)
-    if script is None:
-        return
-    env = dict(os.environ, OLLAMA_BENCH_VERSION=cfg["server"]["ollama_version"],
-               OLLAMA_BENCH_PORT=str(cfg["server"]["port"]))
-    subprocess.run([script, "stop"], env=env, check=False)
-
-
-def loaded_models(native_url):
-    try:
-        return http_json(native_url + "/api/ps", timeout=5).get("models", [])
-    except Exception:  # noqa: BLE001
-        return None   # not reachable
+def slots_of(env):
+    """Parallel server slots a run used: env.json["slots"] (2.0), or OLLAMA_NUM_PARALLEL for
+    1.0 and pre-1.0 runs. '' if unknown."""
+    if env.get("slots") not in (None, ""):
+        return str(env["slots"])
+    return str((env.get("server_env_set_by_harness") or {}).get("OLLAMA_NUM_PARALLEL", ""))

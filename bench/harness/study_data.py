@@ -21,7 +21,7 @@ def _runs(study):
         if not isinstance(ov, dict):
             continue
         levels = ov.get("concurrency_levels") or []
-        slots = str(env.get("server_env_set_by_harness", {}).get("OLLAMA_NUM_PARALLEL", ""))
+        slots = common.slots_of(env)
         if len(levels) != 1 or slots != str(levels[0]):
             continue                       # only slots = users runs count for the protocol
         run = common.load_json(d / "run.json") if (d / "run.json").is_file() else {}
@@ -100,3 +100,41 @@ def failed_below(study, model, workload, users):
         if why:
             return f"{why} (at {n} users)"
     return ""
+
+
+def quality_runs(study):
+    """{model_key: run folder name} of runs whose quality phase produced results without
+    deviations (newest wins)."""
+    out = {}
+    root = common.RESULTS / study
+    if not root.is_dir():
+        return out
+    for d in sorted(root.iterdir()):
+        run_p, env_p = d / "run.json", d / "env.json"
+        if not (run_p.is_file() and env_p.is_file()):
+            continue
+        env = common.load_json(env_p)
+        if env.get("protocol_deviations"):
+            continue
+        for q in common.load_json(run_p).get("quality", []):
+            if q.get("results") and q.get("returncode") in (0, None):
+                out[q["model_key"]] = d.name
+    return out
+
+
+def quality_elsewhere(repo, revision, exclude_study=None):
+    """(study, run) of another study that measured quality for this exact build, or None."""
+    if not common.RESULTS.is_dir():
+        return None
+    for sd in sorted(common.RESULTS.iterdir()):
+        if not sd.is_dir() or sd.name == exclude_study:
+            continue
+        runs = quality_runs(sd.name)
+        for mk, run in runs.items():
+            eff = sd / run / "effective_config.json"
+            if not eff.is_file():
+                continue
+            for m in common.load_json(eff).get("models", []):
+                if m["key"] == mk and m.get("repo") == repo and m.get("revision") == revision:
+                    return sd.name, run
+    return None
