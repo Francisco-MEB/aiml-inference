@@ -3,7 +3,20 @@ name = "aiml-inference"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
+    "accelerate>=1.16.0",
+    "kernels>=0.18.2,<0.19",
     "lm-eval[api]>=0.4.13",
     "ollama>=0.6.3",
     "openpyxl==3.1.5",
+    "torch>=2.15.0",
+    "transformers>=5.23.0",
 ]
+
+# basedpyright also reads [tool.pyright]; venv settings let plain Pyright find the uv environment.
+[tool.pyright]
+typeCheckingMode = "basic"
+venvPath = "."
+venv = ".venv"
+
+[tool.black]
+line-length = 80
