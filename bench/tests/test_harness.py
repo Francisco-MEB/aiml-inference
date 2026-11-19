@@ -81,6 +81,12 @@ class CatalogTest(unittest.TestCase):
         self.assertEqual(catalog.find(catalog.load(), "openai/gpt-oss-20b"),
                          ("gpt-oss", "gpt-oss-20b"))
 
+    def test_single_model_uses_its_family_study_build(self):
+        # Qwen3 8B alone would fit at FP8, but the Qwen study on a GB10 is NVFP4.
+        p = catalog.plan_study("qwen3-8b", catalog.parse_machine("dell"))
+        self.assertEqual(p["build"], "nvfp4")
+        self.assertEqual([m["repo"] for m in p["models"]], ["nvidia/Qwen3-8B-NVFP4"])
+
     def test_unknown_model_is_refused(self):
         with self.assertRaises(SystemExit):
             catalog.plan_study("not-a-model", catalog.parse_machine("dell"))
@@ -150,6 +156,24 @@ class HfTest(unittest.TestCase):
             missing = {"other.safetensors": {"sha256": sha, "size": 1}}
             self.assertEqual(hf.verify_cache(repo, rev, missing, root)["missing"],
                              ["other.safetensors"])
+
+    def test_verify_cache_through_a_shared_blob_store(self):
+        # huggingface_hub 2.x: blobs/<sha256> is itself a link into a shared store.
+        with tempfile.TemporaryDirectory() as root:
+            data = b"weights" * 1000
+            sha = hashlib.sha256(data).hexdigest()
+            repo, rev = "org/model", "1" * 40
+            store = pathlib.Path(root) / "blobs" / "ab"
+            store.mkdir(parents=True)
+            (store / "abcdef-other-hash").write_bytes(data)
+            base = pathlib.Path(root) / "models--org--model"
+            (base / "blobs").mkdir(parents=True)
+            os.symlink(store / "abcdef-other-hash", base / "blobs" / sha)
+            snap = base / "snapshots" / rev
+            snap.mkdir(parents=True)
+            os.symlink(pathlib.Path("../../blobs") / sha, snap / "model.safetensors")
+            files = {"model.safetensors": {"sha256": sha, "size": len(data)}}
+            self.assertTrue(hf.verify_cache(repo, rev, files, root, rehash=True)["ok"])
 
     def test_parse_vllm_metrics(self):
         text = ('vllm:cache_config_info{block_size="16",cache_dtype="fp8",'

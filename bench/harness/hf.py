@@ -122,12 +122,16 @@ def verify_cache(repo, revision, files, root=None, rehash=False):
             missing.append(name)
             checks[name] = False
             continue
-        blob = pathlib.Path(os.path.realpath(p))
-        size = blob.stat().st_size
+        # The snapshot entry links to the repo's blobs/<sha256>; newer huggingface_hub
+        # versions link that blob on into a shared store under another name, so the sha256
+        # is the name one link deep, and the bytes are at the end of the chain.
+        blob_name = pathlib.Path(os.readlink(p)).name if p.is_symlink() else ""
+        data = pathlib.Path(os.path.realpath(p))
+        size = data.stat().st_size
         total += size
-        ok = size == want["size"] and (blob.name == want["sha256"] or not want["sha256"])
+        ok = size == want["size"] and (blob_name == want["sha256"] or not want["sha256"])
         if ok and rehash:
-            ok = common.sha256_file(blob) == want["sha256"]
+            ok = common.sha256_file(data) == want["sha256"]
         checks[name] = ok
     return {"ok": bool(files) and all(checks.values()), "checks": checks, "missing": missing,
             "size_bytes": total, "snapshot": str(snap)}

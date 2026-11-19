@@ -126,8 +126,11 @@ def plan_study(name, machine=None, cat=None):
     def size(mk):
         return fam["models"][mk]["params_b"]
 
-    fitting = [mk for mk in wanted if any(mk in b["models"] and _fits(b["models"][mk], budget)
-                                         for b in builds)]
+    # The build is always the family study's (decided by the whole family), so one model
+    # named on its own is measured in the same quantization as its family's study.
+    fitting = [mk for mk in fam["models"] if any(mk in b["models"]
+                                                 and _fits(b["models"][mk], budget)
+                                                 for b in builds)]
     left = []
     for mk in wanted:
         if mk not in fitting:
