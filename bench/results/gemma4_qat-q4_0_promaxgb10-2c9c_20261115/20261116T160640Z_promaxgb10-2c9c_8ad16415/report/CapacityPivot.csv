@@ -1,0 +1,2 @@
+model,short_chat,long_context_prefill,coding
+12b,>=4,0,>=4

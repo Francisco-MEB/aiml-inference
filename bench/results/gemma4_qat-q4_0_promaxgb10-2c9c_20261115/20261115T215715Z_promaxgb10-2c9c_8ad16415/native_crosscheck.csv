@@ -1,0 +1,4 @@
+run_id,model_key,prompt_id,prompt_tokens,output_tokens,native_prefill_tps,native_decode_tps,native_load_s,client_decode_tps_n1_mean,client_prefill_tps_est_n1_mean,thinking_chars
+20261115T215715Z_promaxgb10-2c9c_8ad16415,31b,short_chat,39,256,194.13899356354565,12.095228569345654,0.000681873,,,0
+20261115T215715Z_promaxgb10-2c9c_8ad16415,31b,long_prefill,2867,256,854.0386316198048,11.187378539374109,0.000995713,,,0
+20261115T215715Z_promaxgb10-2c9c_8ad16415,31b,coding,86,256,392.1407694166678,12.13561857144049,0.00119605,,,0

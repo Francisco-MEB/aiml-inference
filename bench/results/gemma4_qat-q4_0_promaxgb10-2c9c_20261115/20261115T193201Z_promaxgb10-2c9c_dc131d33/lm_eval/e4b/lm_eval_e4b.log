@@ -1,0 +1,31 @@
+2026-11-15:19:32:38 WARNING  [config.evaluate_config:337] --limit SHOULD ONLY BE USED FOR TESTING. REAL METRICS SHOULD NOT BE COMPUTED USING LIMIT.
+2026-11-15:19:32:38 INFO     [config.evaluate_config:357] Using default fewshot_as_multiturn=True.
+2026-11-15:19:32:41 INFO     [_cli.run:391] Including path: /home/gdasilv2/GH/aiml-inference/bench/gemma4/lm_eval_tasks
+2026-11-15:19:32:41 INFO     [_cli.run:392] Selected Tasks: ['mmlu_pro_computer_science', 'humaneval_chat']
+2026-11-15:19:32:41 INFO     [evaluator:214] Setting random seed to 42 | Setting numpy seed to 42 | Setting torch manual seed to 42 | Setting fewshot manual seed to 42
+2026-11-15:19:32:41 WARNING  [evaluator:226] generation_kwargs: {'temperature': 0, 'reasoning_effort': 'none'} specified through cli, these settings will update set parameters in yaml tasks. Ensure 'do_sample=True' for non-greedy decoding!
+2026-11-15:19:32:41 INFO     [evaluator:239] Initializing local-chat-completions model, with arguments: {'model': 'gemma4:e4b-it-qat', 'base_url': 'http://127.0.0.1:11435/v1/chat/completions', 'num_concurrent': 4, 'tokenized_requests': False, 'max_retries': 3}
+2026-11-15:19:32:41 INFO     [models.api_models:176] Using max length 2048 - 1
+2026-11-15:19:32:41 INFO     [models.api_models:197] Using tokenizer None
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-15:19:32:43 INFO     [evaluator_utils:472] Selected tasks:
+2026-11-15:19:32:43 INFO     [evaluator_utils:506] Task: humaneval_chat (/home/gdasilv2/GH/aiml-inference/bench/gemma4/lm_eval_tasks/humaneval_chat/humaneval_chat.yaml)
+2026-11-15:19:32:43 INFO     [evaluator_utils:506] Task: mmlu_pro_computer_science (mmlu_pro/mmlu_pro_computer_science.yaml)
+2026-11-15:19:32:43 INFO     [evaluator:314] mmlu_pro_computer_science: Using gen_kwargs: {'until': ['Question:'], 'max_gen_toks': 2048, 'do_sample': False, 'temperature': 0, 'reasoning_effort': 'none'}
+2026-11-15:19:32:43 INFO     [evaluator:314] humaneval_chat: Using gen_kwargs: {'until': ['<end_of_turn>'], 'max_gen_toks': 1024, 'do_sample': False, 'temperature': 0, 'reasoning_effort': 'none'}
+2026-11-15:19:32:43 INFO     [api.task:312] Building contexts for mmlu_pro_computer_science on rank 0...
+  0%|          | 0/5 [00:00<?, ?it/s]100%|██████████| 5/5 [00:00<00:00, 4347.33it/s]
+2026-11-15:19:32:43 INFO     [api.task:312] Building contexts for humaneval_chat on rank 0...
+  0%|          | 0/5 [00:00<?, ?it/s]100%|██████████| 5/5 [00:00<00:00, 3089.04it/s]
+2026-11-15:19:32:43 INFO     [evaluator:589] Running generate_until requests
+2026-11-15:19:32:43 INFO     [models.api_models:752] Tokenized requests are disabled. Context + generation length is not checked.
+Requesting API:   0%|          | 0/5 [00:00<?, ?it/s]Requesting API:  20%|██        | 1/5 [00:11<00:44, 11.01s/it]Requesting API:  40%|████      | 2/5 [00:12<00:16,  5.41s/it]Requesting API:  60%|██████    | 3/5 [00:22<00:14,  7.47s/it]Requesting API:  80%|████████  | 4/5 [00:23<00:05,  5.01s/it]Requesting API: 100%|██████████| 5/5 [00:23<00:00,  3.24s/it]Requesting API: 100%|██████████| 5/5 [00:23<00:00,  4.75s/it]
+Requesting API:   0%|          | 0/5 [00:00<?, ?it/s]Requesting API:  20%|██        | 1/5 [00:03<00:14,  3.68s/it]Requesting API:  40%|████      | 2/5 [00:04<00:06,  2.21s/it]Requesting API:  60%|██████    | 3/5 [00:05<00:02,  1.35s/it]Requesting API:  80%|████████  | 4/5 [00:06<00:01,  1.39s/it]Requesting API: 100%|██████████| 5/5 [00:06<00:00,  1.00it/s]Requesting API: 100%|██████████| 5/5 [00:06<00:00,  1.39s/it]
+2026-11-15:19:33:14 INFO     [loggers.evaluation_tracker:247] Saving results aggregated
+2026-11-15:19:33:14 INFO     [loggers.evaluation_tracker:119] Saving per-task samples to /home/gdasilv2/GH/aiml-inference/bench/gemma4/results/20261115T193201Z_promaxgb10-2c9c_dc131d33/lm_eval/e4b/gemma4__e4b-it-qat/*.jsonl
+local-chat-completions ({'model': 'gemma4:e4b-it-qat', 'base_url': 'http://127.0.0.1:11435/v1/chat/completions', 'num_concurrent': 4, 'tokenized_requests': False, 'max_retries': 3}), gen_kwargs: ({'temperature': 0, 'reasoning_effort': 'none'}), limit: 5.0, num_fewshot: None, batch_size: 1
+|     Tasks      |Version|    Filter    |n-shot|  Metric   |   |Value|   |Stderr|
+|----------------|------:|--------------|-----:|-----------|---|----:|---|-----:|
+|humaneval_chat  |    1.0|extract_code  |     0|pass@1     |↑  |  1.0|±  |0.0000|
+|computer_science|    3.1|custom-extract|     5|exact_match|↑  |  0.6|±  |0.2449|
+

@@ -1,0 +1,62 @@
+section,parameter,value,note
+DEVIATION,Not run in Docker,"The club stack is Ollama in Docker. This run uses the SAME Ollama version as a native binary under a normal user account, because that user has no docker-group access and no sudo on this host.",Same Ollama version as the pinned image; see the Server rows for exact values
+Run,run_id,20261115T231223Z_promaxgb10-2c9c_8ad16415,
+Run,timestamp_utc,2026-11-15T23:12:44+00:00,
+Run,total run time (min),16.0,
+Run,git_commit,6223975a28031c2024bff756c19a3c9743e6e645,"branch bench/gemma4-groundwork, uncommitted changes: True"
+Run,config file,bench/gemma4/config/gemma4_ollama_native.json,
+Run,config_sha256,8ad164152c90c8738e644284ef26cd53999fe52d3084065c92a9ff37763d66f7,hash of the pinned config before overrides
+Run,command-line overrides,"{'quality_tasks': ['mmlu_pro'], 'quality_limit': 10, 'models': ['12b']}",anything listed here differs from the pinned config
+Run,models run,,
+Run,other GPU processes at start,none,
+Server,backend type,ollama,
+Server,base_url (OpenAI-compatible),http://127.0.0.1:11435/v1,
+Server,mode,native,
+Server,Ollama version (reported by server),0.40.13,
+Server,binary_path,/usr/local/bin/ollama,
+Server,binary_sha256,81f230792fddb5202e2e8b13bdd8671da72e6a14f56f8c75e38fcab439ad2c5e,
+Server,release_asset_sha256_pinned,913d9a28da6da86d551ce4ca531457767bb14d511cbc1d5ca93e9b3b8b9a8666,
+Server,docker_image_digest,not used (native mode); pinned for Docker runs: sha256:44236782466e814af687b3adc04b1b3e4b4288459fc9272e66e8671d11968f82,
+Server env (speed phase),OLLAMA_BENCH_BIN,/usr/local/bin/ollama,set explicitly by the harness
+Server env (speed phase),OLLAMA_BENCH_PORT,11435,set explicitly by the harness
+Server env (speed phase),OLLAMA_BENCH_VERSION,0.40.13,set explicitly by the harness
+Server env (speed phase),OLLAMA_CONTEXT_LENGTH,4096,set explicitly by the harness
+Server env (speed phase),OLLAMA_KEEP_ALIVE,30m,set explicitly by the harness
+Server env (speed phase),OLLAMA_MAX_LOADED_MODELS,1,set explicitly by the harness
+Server env (speed phase),OLLAMA_MODELS,/home/gdasilv2/ollama-bench-models,set explicitly by the harness
+Server env (speed phase),OLLAMA_NO_CLOUD,1,set explicitly by the harness
+Server env (speed phase),OLLAMA_NUM_PARALLEL,16,set explicitly by the harness
+Server env (speed phase),full effective settings (from server log),CUDA_VISIBLE_DEVICES: GGML_VK_VISIBLE_DEVICES: GPU_DEVICE_ORDINAL: HIP_VISIBLE_DEVICES: HSA_OVERRIDE_GFX_VERSION: HTTPS_PROXY: HTTP_PROXY: LLAMA_ARG_FIT: LLAMA_ARG_FIT_TARGET: NO_PROXY: OLLAMA_CONTEXT_LENGTH:4096 OLLAMA_CREATE_REMOTE:false OLLAMA_DEBUG:INFO OLLAMA_DEBUG_LOG_REQUESTS:false OLLAMA_EDITOR: OLLAMA_FLASH_ATTENTION:false OLLAMA_GO_TEMPLATE:true OLLAMA_GPU_OVERHEAD:0 OLLAMA_HOST:http://127.0.0.1:11435 OLLAMA_IGPU_ENABLE: OLLAMA_KEEP_ALIVE:30m0s OLLAMA_KV_CACHE_TYPE: OLLAMA_LLM_LIBRARY: OLLAMA_LOAD_TIMEOUT:5m0s OLLAMA_MAX_LOADED_MODELS:1 OLLAMA_MAX_QUEUE:512 OLLAMA_MAX_TRANSFER_STREAMS:4 OLLAMA_MODELS:/home/gdasilv2/ollama-bench-models OLLAMA_NOHISTORY:false OLLAMA_NOPRUNE:false OLLAMA_NO_CLOUD:true OLLAMA_NUM_PARALLEL:16 OLLAMA_ORIGINS:[http://localhost https://localhost http://localhost:* https://localhost:* http://127.0.0.1 https://127.0.0.1 http://127.0.0.1:* https://127.0.0.1:* http://0.0.0.0 https://0.0.0.0 http://0.0.0.0:* https://0.0.0.0:* app://* file://* tauri://* vscode-webview://* vscode-file://*] OLLAMA_REMOTES:[ollama.com] OLLAMA_SCHED_SPREAD:false OLLAMA_VULKAN:true ROCR_VISIBLE_DEVICES: http_proxy: https_proxy: no_proxy:,everything not listed above was left at default
+Request,temperature,0,
+Request,seed,42,
+Request,max_tokens,256,
+Request,thinking,off,
+Request,thinking_how,reasoning_effort=none on /v1/chat/completions (think=false on the native API); the runner also records any reasoning text returned,
+Request,extra_body,{'reasoning_effort': 'none'},
+Request,cache_busting,each request's user message starts with a deterministic 8-hex nonce so the server's prompt cache cannot skip prefill,
+Request,timeout_s,900,
+Sweep,concurrency_levels,1 2 4 8 16,
+Sweep,reps,5,batches per level; a batch is N simultaneous requests
+Sweep,warmup_max_tokens,16,warm-up is discarded
+Sweep,warmup_all_slots,True,one discarded batch at the highest level
+Sweep,order,"per model: load, warm-up, each prompt x each level x reps, unload",
+Prompts,file,prompts/prompts_v1.jsonl,
+Prompts,sha256,5c7772860192c2ae65e360358407585aca613810ddfa05687ff67b5b7a8e199d,
+Thresholds,pinned rule,"p95 TTFT <= 2.0 s and median per-request decode >= 10.0 tok/s, 0 errors",
+Thresholds,scenario: interactive (pinned),"p95 TTFT <= 2.0 s, decode >= 10.0 tok/s",
+Thresholds,scenario: relaxed,"p95 TTFT <= 5.0 s, decode >= 5.0 tok/s",
+Thresholds,scenario: strict,"p95 TTFT <= 1.0 s, decode >= 20.0 tok/s",
+Thresholds,decode statistics reported,"median, mean, p05, min",p05 = the slowest 5% of requests are below this
+Thresholds,capacity definition,"highest tested level that passes, with every lower level passing too",
+Quantization,all models,Q4_0 (Google QAT checkpoints),
+Model,gemma4:12b-it-qat,manifest sha256:38044be4f923e5a55264ed7df4eaac2676651a905f735197c504045140c02bd3,verified against pin: True
+Model,gemma4:12b-it-qat weights file,sha256:faff1a63667fac17ac5e777f47114688fcefea96e220e211aaa8d62c2c4561f1,hashed on disk
+Power,source,"nvidia-smi power.draw (GPU only; unified memory and CPU are not included, so use the wall meter for system power)",
+Power,interval_s,1,
+Power,idle GPU power (W),5.69,mean over the idle baseline before loading
+Power,wall meter,not provided,wall_meter_w column is empty until --wall-csv is given
+Quality,tasks,mmlu_pro,
+Quality,limit per task,10,
+Quality,gen_kwargs,"temperature=0,reasoning_effort=none",
+Quality,server env for quality phase,"{'OLLAMA_NUM_PARALLEL': '4', 'OLLAMA_CONTEXT_LENGTH': '16384'}",server is restarted with these before lm-eval
+Quality,lm-eval version,0.4.13,

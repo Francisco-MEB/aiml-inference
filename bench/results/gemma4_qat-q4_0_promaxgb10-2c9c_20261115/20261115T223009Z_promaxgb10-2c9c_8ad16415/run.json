@@ -1,0 +1,61 @@
+{
+  "run_id": "20261115T223009Z_promaxgb10-2c9c_8ad16415",
+  "phases": [
+    {
+      "phase": "idle_baseline",
+      "start_unix": 1794781809.651,
+      "end_unix": 1794781819.651,
+      "seconds": 10.0
+    },
+    {
+      "phase": "pull_verify",
+      "start_unix": 1794781823.682,
+      "end_unix": 1794781831.796,
+      "seconds": 8.1
+    },
+    {
+      "phase": "speed:31b",
+      "start_unix": 1794781831.951,
+      "end_unix": 1794783728.443,
+      "seconds": 1896.5
+    }
+  ],
+  "models": [
+    {
+      "key": "31b",
+      "tag": "gemma4:31b-it-qat",
+      "load_plus_warmup_s": 11.81,
+      "ps_after_load": [
+        {
+          "name": "gemma4:31b-it-qat",
+          "size": 58792607742,
+          "size_vram": 58792607742,
+          "context_length": 4096
+        }
+      ],
+      "thinking_check": {
+        "pinned_setting": {
+          "reasoning_chars": 0,
+          "content_chars": 252,
+          "error": ""
+        },
+        "server_default_no_setting": {
+          "reasoning_chars": 218,
+          "content_chars": 0,
+          "error": ""
+        },
+        "reasoning_effort_high": {
+          "reasoning_chars": 206,
+          "content_chars": 0,
+          "error": ""
+        }
+      },
+      "reasoning_chars_total": 0,
+      "errors": 0,
+      "unloaded": true
+    }
+  ],
+  "quality": [],
+  "models_skipped": [],
+  "total_seconds": 1920
+}

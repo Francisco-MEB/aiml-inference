@@ -1,0 +1,4 @@
+model,prompt_class,user_capacity,levels_tested,levels_passing,rule,note
+e4b,coding,2,1 2,1 2,"p95 TTFT <= 2.0 s and median per-request decode >= 10.0 tok/s, 0 errors",passes at the highest level tested; true capacity may be higher
+e4b,long_context_prefill,2,1 2,1 2,"p95 TTFT <= 2.0 s and median per-request decode >= 10.0 tok/s, 0 errors",passes at the highest level tested; true capacity may be higher
+e4b,short_chat,2,1 2,1 2,"p95 TTFT <= 2.0 s and median per-request decode >= 10.0 tok/s, 0 errors",passes at the highest level tested; true capacity may be higher

@@ -1,0 +1,37 @@
+[
+  {
+    "key": "12b",
+    "tag": "gemma4:12b-it-qat",
+    "pinned_manifest_sha256": "38044be4f923e5a55264ed7df4eaac2676651a905f735197c504045140c02bd3",
+    "pinned_model_blob_sha256": "faff1a63667fac17ac5e777f47114688fcefea96e220e211aaa8d62c2c4561f1",
+    "checks": {
+      "manifest_digest": true,
+      "model_layer_digest": true,
+      "model_blob_bytes": true
+    },
+    "ollama_digest": "38044be4f923e5a55264ed7df4eaac2676651a905f735197c504045140c02bd3",
+    "size_bytes": 7151003754,
+    "details": {
+      "parent_model": "",
+      "format": "gguf",
+      "family": "gemma4",
+      "families": [
+        "gemma4"
+      ],
+      "parameter_size": "11.9B",
+      "quantization_level": "Q4_0",
+      "context_length": 262144,
+      "embedding_length": 3840,
+      "runner": "ggml"
+    },
+    "layers": {
+      "model": "sha256:faff1a63667fac17ac5e777f47114688fcefea96e220e211aaa8d62c2c4561f1",
+      "projector": "sha256:e70b0e5cd80323d5d588b4ed06780356b7b1ba03995a4b8164c6ae9db0ff5989",
+      "license": "sha256:0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "params": "sha256:56380ca2ab89f1f68c283f4d50863c0bcab52ae3f1b9a88e4ab5617b176f71a3",
+      "v2+json": "sha256:38044be4f923e5a55264ed7df4eaac2676651a905f735197c504045140c02bd3"
+    },
+    "model_blob_sha256_on_disk": "faff1a63667fac17ac5e777f47114688fcefea96e220e211aaa8d62c2c4561f1",
+    "ok": true
+  }
+]

@@ -1,0 +1,4 @@
+model,prompt_class,concurrency,n_requests,n_batches,errors,prompt_tokens_mean,output_tokens_mean,ttft_mean_s,ttft_p50_s,ttft_p95_s,ttft_max_s,e2e_mean_s,decode_tps_per_req_mean,decode_tps_per_req_median,decode_tps_per_req_p05,decode_tps_per_req_min,prefill_tps_est_mean,prefill_note,aggregate_tps_mean,aggregate_tps_min,aggregate_tps_max,scaling_efficiency,output_tokens_per_hour,gpu_power_avg_w,gpu_joules_per_output_token,wall_power_avg_w,wall_joules_per_output_token,reasoning_chars
+31b,short_chat,4,20,5,0,40.0,256.0,0.708,0.775,0.782,0.785,23.68,11.1,11.11,11.06,11.06,56.88,includes queueing; use N=1,43.25,43.13,43.46,,,51.66,1.194,,,0
+31b,long_context_prefill,4,20,5,0,2869.0,256.0,12.7,11.583,18.06,18.125,46.94,7.54,7.15,6.4,6.4,261.93,includes queueing; use N=1,21.62,21.34,22.54,,,55.17,2.552,,,0
+31b,coding,4,20,5,0,86.0,256.0,1.486,1.072,3.285,3.285,24.67,11.0,11.01,10.97,10.97,71.81,includes queueing; use N=1,41.56,38.74,42.46,,,52.16,1.256,,,0

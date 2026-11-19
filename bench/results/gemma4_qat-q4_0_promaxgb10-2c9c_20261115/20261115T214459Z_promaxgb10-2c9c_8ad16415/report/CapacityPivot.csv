@@ -1,0 +1,2 @@
+model,short_chat,long_context_prefill,coding
+e4b,>=16,0,>=16

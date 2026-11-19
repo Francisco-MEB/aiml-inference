@@ -1,0 +1,3 @@
+model,task,metric,value,stderr,n_samples,limit,status
+26b-a4b,humaneval_chat,sample_len,40,,40,40,ran
+26b-a4b,humaneval_chat,"pass@1,extract_code",1.0,0.0,40,40,ran
