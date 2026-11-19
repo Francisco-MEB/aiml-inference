@@ -99,7 +99,14 @@ this session, VS Code and SSH closing. Give the member:
 - `bench/stop_protocol.sh <study_id>`: clean stop; completed levels are kept
 - the same `run_protocol.sh` command again: resume after a stop or a crash
 
-Check `status.sh` and the log when the member comes back, rather than polling while it runs.
+Then start the status loop yourself, without asking: invoke the `loop` skill with the
+argument below (`<study_id>` filled in). It reports every 30 minutes and ends itself when the
+run does. Tell the member it only runs while this Claude Code session stays open (on a Dell,
+inside tmux), that the benchmark keeps going either way, and that *stop the loop* ends it.
+
+```
+30m Run bench/status.sh <study_id> and read the last lines of bench/.run/<study_id>.log. In one or two lines, tell me whether my benchmark is on track: current model and level, time remaining, and any FAILED lines. When status says done or the process is no longer running, give me a short final summary, stop the loop, and offer to validate and report (benchmark skill step 8).
+```
 
 ## 8. Validate and report
 
