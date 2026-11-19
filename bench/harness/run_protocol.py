@@ -138,7 +138,7 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", required=True)
     ap.add_argument("--models", nargs="+", help="model keys (default: all in the config)")
-    g = ap.add_mutually_exclusive_group(required=True)
+    g = ap.add_mutually_exclusive_group()          # one of them, unless --quality-only
     g.add_argument("--calibrate", action="store_true",
                    help=f"run only the calibration levels {protocol.CALIBRATION_LEVELS}")
     g.add_argument("--mode", help="stop | all | cap:<minutes per level>")
@@ -162,6 +162,8 @@ def main():
     bad = protocol.check_config(cfg)
     if bad and "--allow-deviation" not in a.test_overrides:
         raise SystemExit("config breaks the protocol:\n  " + "\n  ".join(bad))
+    if not (a.calibrate or a.mode or a.quality_only):
+        ap.error("one of --calibrate, --mode or --quality-only is required")
     if a.quality_only and not (a.calibrate or a.mode):
         a.mode = "stop"
     mode, level_cap_min = ("calibrate", None) if a.calibrate else (a.mode.split(":")[0], None)

@@ -30,6 +30,7 @@ import run_quality
 import run_speed
 
 EXIT_SERVER_FAILED = 3
+EXIT_QUALITY_FAILED = 4
 
 
 def main():
@@ -263,6 +264,11 @@ def main():
                 rec = run_quality.run(cfg, m, qdir, cfg["quality"].get("limit"))
                 rec["server"] = {k: v for k, v in sinfo.items() if k != "command"}
                 quality.append(rec)
+                if rec.get("returncode") or not rec.get("results"):
+                    print(f"QUALITY FAILED for {m['key']}: lm-eval exited with "
+                          f"{rec.get('returncode')}, {len(rec.get('results', []))} results; see "
+                          f"{qdir}/lm_eval_{m['key']}_*.log")
+                    exit_code = EXIT_QUALITY_FAILED
                 server.stop()
                 server = None
                 phase(f"quality:{m['key']}", t0)

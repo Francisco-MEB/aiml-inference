@@ -169,14 +169,20 @@ and a 16,384-token context, through lm-evaluation-harness 0.4.13 (`--model
 bench-chat-completions`: the stock chat client without the fixed seed, see section 3).
 Greedy, thinking off as in section 3, at most 4,096 generated tokens per answer.
 
-| Task (lm-eval name) | What it measures | Size |
-|---|---|---|
-| `mmlu_pro` | knowledge and reasoning, 14 subjects, 10 choices | 100 per subject = 1,400 |
-| `gpqa_diamond_cot_zeroshot` | graduate-level science (gated: needs `HF_TOKEN` and accepted terms) | 198 |
-| `ifeval` | following checkable instructions | 541 |
-| `gsm8k_cot_zeroshot` | grade-school math; a harness sanity check against published scores | 1,319 |
-| `humaneval_instruct` | Python functions graded by hidden tests (runs model-written code) | 164 |
-| `aime25` | competition math, exact integer answers | 30 |
+| Task (lm-eval name) | What it measures | Size | Headline metric |
+|---|---|---|---|
+| `mmlu_pro` | knowledge and reasoning, 14 subjects, 10 choices | 100 per subject = 1,400 | `exact_match,custom-extract` |
+| `gpqa_diamond_cot_zeroshot` | graduate-level science (gated: needs `HF_TOKEN` and accepted terms) | 198 | `exact_match,flexible-extract` |
+| `ifeval` | following checkable instructions | 541 | `prompt_level_strict_acc` |
+| `gsm8k_cot_zeroshot` | grade-school math; a harness sanity check against published scores | 1,319 | `exact_match,flexible-extract` |
+| `humaneval_chat` | Python functions graded by hidden tests (runs model-written code) | 164 | `pass@1` |
+| `aime25` | competition math, exact integer answers | 30 | `exact_match` |
+
+`humaneval_chat` is the club's own task (`bench/lm_eval_tasks/`): the model answers in a code
+block, which is extracted and tested. The stock `humaneval_instruct` cuts chat answers off at its
+`\ndef` stop string and scored Qwen3 8B 0/5 in the pilot. GSM8K's `strict-match` expects the
+answer in a fixed "The answer is" format that chat models rarely use, so it reads near 0; report
+`flexible-extract`.
 
 A quality score belongs to the **build**, not the machine: the same repo at the same commit
 scores the same on any machine. So the phase is skipped, and the skip recorded, when this study

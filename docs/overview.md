@@ -150,7 +150,7 @@ During the coding eval, vLLM served ~90% of prompt tokens from its prefix cache 
 
 ## 10. Technical debt register
 
-**Paid down 2026-11-19:** the club benchmark moved from Ollama to vLLM/MLX (`aiml-bench/2.0`) with a pinned model catalog and a unit/end-to-end test suite for `bench/` (`bench/tests`, fake server, no GPU).
+**Paid down 2026-11-19:** the club benchmark moved from Ollama to vLLM/MLX (`aiml-bench/2.0`) with a pinned model catalog and a unit/end-to-end test suite for `bench/` (`bench/tests`, fake server, no GPU). Pilot on this GB10 the same day (`nvidia/Qwen3-8B-NVFP4`, test run, not merged): levels 1 to 4 clean, 39 tok/s for one user (~93% of the bandwidth limit), 0.07 s to first token, ~9k tok/s prefill, 1.03 s p95 first token for the long document at 4 users, thinking off verified, vLLM restart ~75 s with warm caches; quality phase end to end on 5 questions per task. It found and fixed: HF 2.x cache verification, single-model plans using the family's build, `--quality-only`, the missing `lm-eval[ifeval]` extra, lm-eval failures reported as success, and stock `humaneval_instruct` truncating chat answers (now the club's `humaneval_chat`).
 
 **Paid down 2026-11-17:** the vLLM capacity benchmark (tools, chat + RAG runs, Python A/B).
 

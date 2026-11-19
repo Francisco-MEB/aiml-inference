@@ -1,6 +1,9 @@
-# HumanEval for chat-completions endpoints. The stock humaneval/humaneval_instruct tasks rely on
-# a response prefix and on stop strings such as "\ndef", which truncate a chat model's answer
-# (it restates the signature). This variant lets the model answer in a code block and extracts it.
+# HumanEval for chat-completions endpoints (protocol aiml-bench/2.0 quality suite).
+# The stock humaneval/humaneval_instruct tasks rely on continuing a pre-filled answer and on stop
+# strings such as "\ndef", which cut a chat model's answer off right after its imports (it
+# restates the signature): the 2.0 pilot scored Qwen3 8B 0/5 that way. This variant lets the
+# model answer in a code block and extracts it. No stop strings: the model's own end token ends
+# the answer (1.0 stopped on Gemma's "<end_of_turn>", which no other family emits).
 task: humaneval_chat
 dataset_path: openai/openai_humaneval
 unsafe_code: true
@@ -14,8 +17,7 @@ metric_list:
     higher_is_better: true
     k: [1]
 generation_kwargs:
-  until:
-    - "<end_of_turn>"
+  until: []
   max_gen_toks: 1024
   do_sample: false
 repeats: 1
@@ -26,4 +28,4 @@ filter_list:
       - function: "custom"
         filter_fn: !function utils.build_predictions_chat
 metadata:
-  version: 1.0
+  version: 2.0

@@ -32,10 +32,10 @@ VLLM_GPU_MEMORY_UTILIZATION = 0.85
 
 # Quality phase (core suite, thinking off): lm-evaluation-harness tasks and per-task limits.
 QUALITY_TASKS = ["mmlu_pro", "gpqa_diamond_cot_zeroshot", "ifeval", "gsm8k_cot_zeroshot",
-                 "humaneval_instruct", "aime25"]
+                 "humaneval_chat", "aime25"]
 QUALITY_LIMITS = {"mmlu_pro": 100}          # per MMLU-Pro subject: 14 x 100 = 1,400 questions
 QUALITY_GATED = ["gpqa_diamond_cot_zeroshot"]
-QUALITY_CODE_EXEC = ["humaneval_instruct"]
+QUALITY_CODE_EXEC = ["humaneval_chat"]
 QUALITY_SLOTS = 32
 QUALITY_CONTEXT = 16384
 QUALITY_MAX_GEN_TOKS = 4096

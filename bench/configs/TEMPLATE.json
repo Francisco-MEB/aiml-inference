@@ -60,15 +60,16 @@
   },
   "quality": {
     "enabled": true,
-    "tasks": ["mmlu_pro", "gpqa_diamond_cot_zeroshot", "ifeval", "gsm8k_cot_zeroshot", "humaneval_instruct", "aime25"],
+    "tasks": ["mmlu_pro", "gpqa_diamond_cot_zeroshot", "ifeval", "gsm8k_cot_zeroshot", "humaneval_chat", "aime25"],
     "limits": {"mmlu_pro": 100},
     "gated_tasks": ["gpqa_diamond_cot_zeroshot"],
-    "code_exec_tasks": ["humaneval_instruct"],
+    "code_exec_tasks": ["humaneval_chat"],
     "allow_code_execution": true,
     "num_concurrent": 32,
     "slots": 32,
     "context": 16384,
     "max_gen_toks": 4096,
+    "include_path": "lm_eval_tasks",
     "gen_kwargs": "temperature=0"
   }
 }

@@ -69,6 +69,8 @@ def run(cfg, model, out_dir, limit=None, log=print):
                "--output_path", str(out_dir), "--log_samples"]
         if lim:
             cmd += ["--limit", str(lim)]
+        if q.get("include_path"):          # the club's own tasks (humaneval_chat)
+            cmd += ["--include_path", str(common.BENCH / q["include_path"])]
         if any(t in q.get("code_exec_tasks", []) for t in tasks):
             cmd.append("--confirm_run_unsafe_code")
             env["HF_ALLOW_CODE_EVAL"] = "1"

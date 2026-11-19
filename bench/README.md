@@ -50,7 +50,8 @@ Results: `bench/results/<study_id>/combined/findings.xlsx`.
 | `harness/protocol.py` | the fixed protocol values in code |
 | `tests/` | `.venv/bin/python -m unittest discover -s bench/tests` (no GPU needed: `fake_server.py`) |
 | `results/` | one folder per study |
-| `legacy/` | 1.0 (Ollama) server scripts, the Gemma config and HumanEval task, the first study's scripts |
+| `lm_eval_tasks/` | the club's own lm-eval tasks: `humaneval_chat` (HumanEval for chat endpoints) |
+| `legacy/` | 1.0 (Ollama) server scripts, the Gemma config, the first study's scripts |
 
 ## Adding a model (benchmarks lead)
 
