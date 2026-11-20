@@ -118,6 +118,9 @@ def plan_study(name, machine=None, cat=None):
                          f"{', '.join(cat['families'])}. Ask the benchmarks lead to add it.")
     fam = cat["families"][fk]
     builds = fam["builds"].get(machine["engine"], [])
+    prefer = (fam.get("prefer") or {}).get(machine["engine"])   # a family's deliberate choice
+    if prefer:
+        builds = sorted(builds, key=lambda b: b["format"] != prefer)
     budget = weight_budget_bytes(machine)
     study_set = fam.get("study") or list(fam["models"])     # the family's small/medium/large
     wanted = [only] if only else list(study_set)

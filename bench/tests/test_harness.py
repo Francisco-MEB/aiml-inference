@@ -57,7 +57,7 @@ class CatalogTest(unittest.TestCase):
         p = catalog.plan_study("qwen", catalog.parse_machine("dell"))
         self.assertEqual(p["build"], "nvfp4")
         self.assertEqual([m["key"] for m in p["models"]],
-                         ["qwen3-8b", "qwen3.6-35b-a3b", "qwen3.5-122b-a10b"])
+                         ["qwen3.5-9b", "qwen3.6-35b-a3b", "qwen3.5-122b-a10b"])
         self.assertTrue(all(m["quantization"] == "nvfp4" for m in p["models"]))
 
     def test_every_assigned_family_has_three_sizes_on_a_dell(self):
@@ -85,15 +85,15 @@ class CatalogTest(unittest.TestCase):
             p = catalog.plan_study("kimi", catalog.parse_machine(machine))
             self.assertTrue(all("--trust-remote-code" in m["server_args"] for m in p["models"]))
 
-    def test_dell_gemma_fits_at_bf16(self):
+    def test_dell_gemma_prefers_nvfp4(self):
         self.assertEqual(catalog.plan_study("gemma", catalog.parse_machine("dell"))["build"],
-                         "bf16")
+                         "nvfp4")
 
     def test_small_mac_swaps_in_a_model_that_fits_and_raises_precision(self):
         p = catalog.plan_study("qwen", catalog.parse_machine("mac:64"))
         self.assertEqual(p["build"], "8bit")
         keys = [m["key"] for m in p["models"]]
-        self.assertEqual(keys, ["qwen3-8b", "qwen3.8-27b", "qwen3.6-35b-a3b"])
+        self.assertEqual(keys, ["qwen3.5-9b", "qwen3.8-27b", "qwen3.6-35b-a3b"])
         self.assertEqual([x["key"] for x in p["left_out"]], ["qwen3.5-122b-a10b"])
         self.assertIn("qwen3.8-27b runs in its place", p["left_out"][0]["reason"])
 

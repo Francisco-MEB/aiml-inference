@@ -24,7 +24,7 @@
         },
         "gemma4-12b": {
           "label": "Gemma 4 12B",
-          "size_class": "medium",
+          "size_class": "small",
           "arch": "dense",
           "params_b": 12.0,
           "active_params_b": 12.0
@@ -268,14 +268,18 @@
         ]
       },
       "study": [
-        "gemma4-e4b",
+        "gemma4-12b",
         "gemma4-26b-a4b",
         "gemma4-31b"
-      ]
+      ],
+      "prefer": {
+        "vllm": "nvfp4"
+      },
+      "notes": "On vLLM Gemma runs at NVFP4 (Red Hat builds) by choice although BF16 fits: it puts Gemma in the same 4-bit class as the other families on the Dells and makes the dense 31B usable interactively (~23 GB instead of ~63 GB)."
     },
     "qwen": {
       "label": "Alibaba Qwen",
-      "notes": "Mixed generations on purpose: NVIDIA publishes NVFP4 for Qwen3 8B (the newest small Qwen with an NVFP4 build), Qwen3.8 27B, Qwen3.6 35B-A3B and Qwen3.5 122B-A10B.",
+      "notes": "Qwen3.5 9B (Red Hat NVFP4) is the small model; NVIDIA publishes NVFP4 for Qwen3.6 35B-A3B and Qwen3.5 122B-A10B.",
       "thinking": {
         "chat_template_kwargs": {
           "enable_thinking": false
@@ -287,6 +291,13 @@
         "qwen3"
       ],
       "models": {
+        "qwen3.5-9b": {
+          "label": "Qwen3.5 9B",
+          "size_class": "small",
+          "arch": "dense",
+          "params_b": 9.0,
+          "active_params_b": 9.0
+        },
         "qwen3-8b": {
           "label": "Qwen3 8B",
           "size_class": "small",
@@ -322,6 +333,17 @@
             "format": "fp8",
             "publisher": "Qwen / NVIDIA",
             "models": {
+              "qwen3.5-9b": {
+                "repo": "RedHatAI/Qwen3.5-9B-FP8-dynamic",
+                "revision": "790f0576d2d77dd5322aa0603a470bd9e3a3d1f6",
+                "weights_gb": 14.01,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "compressed-tensors"
+              },
               "qwen3-8b": {
                 "repo": "nvidia/Qwen3-8B-FP8",
                 "revision": "2cebc4c89e25abc17668c81b01dceaf3d8b914d5",
@@ -370,8 +392,19 @@
           },
           {
             "format": "nvfp4",
-            "publisher": "NVIDIA",
+            "publisher": "NVIDIA / Red Hat AI",
             "models": {
+              "qwen3.5-9b": {
+                "repo": "RedHatAI/Qwen3.5-9B-NVFP4",
+                "revision": "a4df85a20fb7e54740f564f15af0c2f5d9c6616c",
+                "weights_gb": 9.36,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "compressed-tensors"
+              },
               "qwen3-8b": {
                 "repo": "nvidia/Qwen3-8B-NVFP4",
                 "revision": "ccd10a893cbca613259517c3efe08e151ddf2b8e",
@@ -424,6 +457,17 @@
             "format": "bf16",
             "publisher": "mlx-community",
             "models": {
+              "qwen3.5-9b": {
+                "repo": "mlx-community/Qwen3.5-9B-bf16",
+                "revision": "27cdb77d9381d508abfe5d4e06bcb95471e312ac",
+                "weights_gb": 18.82,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              },
               "qwen3-8b": {
                 "repo": "mlx-community/Qwen3-8B-bf16",
                 "revision": "85dd0f16bfe491befbc9cf0b4e966664236e5050",
@@ -474,6 +518,17 @@
             "format": "8bit",
             "publisher": "mlx-community",
             "models": {
+              "qwen3.5-9b": {
+                "repo": "mlx-community/Qwen3.5-9B-8bit",
+                "revision": "16daa4818c54ce5f5436f929d52542eb65bbed9d",
+                "weights_gb": 10.43,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
               "qwen3-8b": {
                 "repo": "mlx-community/Qwen3-8B-8bit",
                 "revision": "48a0b75b1ae72503e21e1558d040bc227510ff06",
@@ -524,6 +579,17 @@
             "format": "4bit",
             "publisher": "mlx-community",
             "models": {
+              "qwen3.5-9b": {
+                "repo": "mlx-community/Qwen3.5-9B-4bit",
+                "revision": "8b2b98c00a6b4d291155e4890773ca8f769aee53",
+                "weights_gb": 5.95,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
               "qwen3-8b": {
                 "repo": "mlx-community/Qwen3-8B-4bit",
                 "revision": "545dc4251c05440727734bcd94334791f6ab0192",
@@ -573,7 +639,7 @@
         ]
       },
       "study": [
-        "qwen3-8b",
+        "qwen3.5-9b",
         "qwen3.6-35b-a3b",
         "qwen3.5-122b-a10b"
       ]
