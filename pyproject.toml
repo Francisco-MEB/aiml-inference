@@ -7,3 +7,23 @@ dependencies = [
     "ollama>=0.6.3",
     "openpyxl==3.1.5",
 ]
+
+[dependency-groups]
+# scripts/nvfp4_quantization.py (NVFP4 experiments on a GB10). Not installed by a plain
+# `uv sync`, so the benchmark setup stays light (CLAUDE.md: no torch in the root env by default):
+#   uv run --group quantize scripts/nvfp4_quantization.py Qwen/Qwen3-4B
+quantize = [
+    "accelerate>=1.16.0",
+    "kernels>=0.18.2,<0.19",
+    "torch>=2.15.0",
+    "transformers>=5.23.0",
+]
+
+# basedpyright also reads [tool.pyright]; venv settings let plain Pyright find the uv environment.
+[tool.pyright]
+typeCheckingMode = "basic"
+venvPath = "."
+venv = ".venv"
+
+[tool.black]
+line-length = 80
