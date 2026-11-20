@@ -34,6 +34,7 @@ Results: `bench/results/<study_id>/combined/findings.xlsx`.
 | Path | What |
 |---|---|
 | `benchmark-protocol.md` | the protocol |
+| `example-output.md` | what a run looks like in Claude Code and what the results contain (real pilot numbers) |
 | `catalog/models.json` | every family's models and their pinned builds per engine |
 | `configs/TEMPLATE.json` | the fixed sections of a study config (configs are written by `catalog.py`) |
 | `prompts/prompts_v1.jsonl` | the three fixed workloads (checksum pinned) |
