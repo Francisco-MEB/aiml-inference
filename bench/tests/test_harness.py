@@ -78,7 +78,7 @@ class CatalogTest(unittest.TestCase):
         # Without a bf16 Gemma 26B-A4B, 8-bit keeps all three sizes on a 128 GB Mac (default
         # highest-precision rule, so the family's 4-bit preference is removed here).
         cat = catalog.load()
-        del cat["families"]["gemma"]["preferred_build"]
+        del cat["families"]["gemma"]["prefer"]
         for b in cat["families"]["gemma"]["builds"]["mlx"]:
             if b["format"] == "bf16":
                 del b["models"]["gemma4-26b-a4b"]
@@ -87,7 +87,7 @@ class CatalogTest(unittest.TestCase):
         self.assertEqual(len(p["models"]), 3)
 
     def test_every_assigned_family_is_4bit_on_the_mac_studio(self):
-        # Like-for-like with the GB10 (NVFP4 / W4A16); Gemma gets there through preferred_build.
+        # Like-for-like with the GB10 (NVFP4 / W4A16); Gemma gets there through prefer.
         for fam in ("kimi", "gemma", "qwen", "glm"):
             p = catalog.plan_study(fam, catalog.parse_machine("studio"))
             self.assertEqual(p["build"], "4bit", fam)
@@ -124,7 +124,7 @@ class CatalogTest(unittest.TestCase):
                          ["gemma4-12b", "gemma4-26b-a4b", "gemma4-31b"])
         # Without the preference, the highest-precision rule picks BF16 (the 31B fits).
         cat = catalog.load()
-        del cat["families"]["gemma"]["preferred_build"]
+        del cat["families"]["gemma"]["prefer"]
         self.assertEqual(catalog.plan_study("gemma", catalog.parse_machine("dell"), cat)["build"],
                          "bf16")
 
@@ -459,6 +459,28 @@ class OrchestratorTest(unittest.TestCase):
             self.assertNotIn("START", p2.stdout)
             self.assertEqual(n_runs, len([d for d in study.iterdir()
                                           if (d / "env.json").exists()]))
+
+            # A quality phase is its own run; the merged spreadsheet must carry its scores.
+            speed_run = next(d for d in study.iterdir() if (d / "requests.csv").exists()
+                             and d.name != "combined")
+            qrun = study / "20990101T000000Z_test_quality"
+            qrun.mkdir()
+            for f in ("env.json", "effective_config.json"):
+                shutil.copy(speed_run / f, qrun / f)
+            mk = cfg["models"][0]["key"]
+            common.write_json(qrun / "run.json", {"run_id": qrun.name, "phases": [], "models": [],
+                                                  "quality": [{
+                "model_key": mk, "model_tag": cfg["models"][0]["tag"], "limit": 5,
+                "tasks_requested": ["ifeval"], "tasks_skipped": [], "returncode": 0,
+                "results": [{"task": "ifeval", "metric": "prompt_level_strict_acc,none",
+                             "value": 0.8, "n": 5, "stderr": 0.2}]}]})
+            p3 = subprocess.run([sys.executable, str(BENCH / "harness/merge_study.py"),
+                                 cfg["study"]["id"], "--include-deviations"],
+                                env=env, capture_output=True, text=True, timeout=300)
+            self.assertEqual(p3.returncode, 0, p3.stdout[-2000:] + p3.stderr[-2000:])
+            merged = common.load_json(study / "combined" / "run.json")
+            self.assertEqual([q["model_key"] for q in merged["quality"]], [mk])
+            self.assertTrue((study / "combined" / "report" / "Quality.csv").exists())
 
 
 if __name__ == "__main__":

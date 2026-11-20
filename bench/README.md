@@ -81,6 +81,7 @@ step 3 reports MISMATCH, delete that model's `models--<org>--<name>` folder and 
 | Path | What |
 |---|---|
 | `benchmark-protocol.md` | the protocol |
+| `example-output.md` | what a run looks like in Claude Code and what the results contain (real pilot numbers) |
 | `catalog/models.json` | every family's models and their pinned builds per engine |
 | `configs/TEMPLATE.json` | the fixed sections of a study config (configs are written by `catalog.py`) |
 | `prompts/prompts_v1.jsonl` | the three fixed workloads (checksum pinned) |
@@ -104,7 +105,7 @@ step 3 reports MISMATCH, delete that model's `models--<org>--<name>` folder and 
 ## Adding a model (benchmarks lead)
 
 Add the model to its family in `catalog/models.json` (metadata, plus a build per engine and
-format, highest precision first; a family's `preferred_build` overrides that order, with the
+format, highest precision first; a family's `prefer` overrides that order, with the
 reason in its notes), then `.venv/bin/python bench/harness/catalog.py pin` to fill
 revision, size, format and gating from the Hub, and `catalog.py plan <family> --machine dell`
 (or `mac:<GiB>`) to see the study it produces. Commit the catalog.

@@ -31,7 +31,7 @@ build format, so small → large is a like-for-like comparison. `catalog.py plan
 1. the **largest** model of the family that fits this machine in any build;
 2. the **highest-precision** build in which that model fits (order: BF16, then 8-bit / FP8,
    then 4-bit), unless the family names a preferred build for this engine (catalog
-   `preferred_build`, with the reason in the family's notes: Gemma runs NVFP4 on the Dells and
+   `prefer`, with the reason in the family's notes: Gemma runs NVFP4 on the Dells and
    4-bit on the Macs);
 3. every family model that has that build and fits. A model without a build in that format,
    or too large, is listed as **left out** with the reason, never swapped for another build.
@@ -117,10 +117,12 @@ how good they are; quality is section 7.
   server.
 - Levels 1, 2 and 4 are the **calibration** (section 6). They are real data and are kept.
 
-## 5. High levels (32 to 128 users): you choose, after seeing the time
+## 5. High levels (32 to 128 users): `stop` by default
 
 Large models and long prompts get slow fast. The 31B Gemma took 262 s per batch for long context
-at 16 users on Ollama. So at the start, after calibration, you choose one mode:
+at 16 users on Ollama. So after calibration the study runs in one of three modes. The skill uses
+`stop` with a time cap set from the estimate, and asks you to choose only when the estimate is
+over 4 hours or you want complete curves:
 
 | Mode | What runs | Use when |
 |---|---|---|
@@ -128,7 +130,8 @@ at 16 users on Ollama. So at the start, after calibration, you choose one mode:
 | `all` | Every level to 128 for every workload. | You want complete curves and have the hours. |
 | `cap:<min>` | Every level, but each workload level stops starting new batches after `<min>` minutes and is marked as capped. | Complete curves with a bounded time. |
 
-You also set a total cap (`--cap-hours`): no new level starts after that.
+A total cap (`--cap-hours`, by default the high end of the estimate) bounds the run: no new
+level starts after it.
 
 ## 6. How long it will take on your machine
 
@@ -297,8 +300,9 @@ The second `run_protocol.sh` runs every remaining level and then each model's qu
 - **Check once per machine** that logging out doesn't kill your processes (Linux):
   `loginctl show-user $USER -p Linger` and `grep KillUserProcesses /etc/systemd/logind.conf`.
   If `KillUserProcesses=yes` and `Linger=no`, ask an admin for `loginctl enable-linger <you>`,
-  or keep a session open (e.g. inside `tmux`). On a Mac, keep it awake: `caffeinate -dims`
-  in another terminal for the length of the run.
+  or keep a session open (e.g. inside `tmux`). On a Mac, `run_protocol.sh` keeps the machine
+  awake for the length of the run (`caffeinate -w`); turning on System Settings → Energy →
+  "Prevent automatic sleeping when the display is off" once covers the time between runs too.
 
 ## 11. Shared-machine rules
 

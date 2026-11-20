@@ -5,10 +5,10 @@ description: Run a club inference benchmark under the aiml-bench/2.0 protocol (b
 
 # Club benchmark (aiml-bench/2.0)
 
-The member says what they were assigned: a family (`qwen`, `gemma`, `gpt-oss`, `llama`, `muse`,
-`mistral`, `glm`, `kimi`) or one model (catalog key or Hugging Face repo). Everything else comes from
-the catalog and the machine; the member's only decisions are the high-level mode and the time
-cap (step 6). The protocol is `bench/benchmark-protocol.md`: read sections 1, 5 and 10 before
+The member says what they were assigned: a family (`kimi`, `gemma`, `qwen`, `glm`, `gpt-oss`,
+`llama`, `muse`, `mistral`) or one model (catalog key or Hugging Face repo). Everything else
+comes from the catalog and the machine, and the run defaults to `stop` mode with an automatic
+time cap (step 6); the member's only input is their name or netid. The protocol is `bench/benchmark-protocol.md`: read sections 1, 5 and 10 before
 step 1, and look up the rest when a step needs it. Values it marks as fixed stay fixed; when
 something can't follow the protocol, stop and tell the member what and why.
 
@@ -26,8 +26,11 @@ $PY bench/harness/preflight.py
   `cd serving/mlx && uv sync` on a Mac.
 - `HF_TOKEN` exported (`echo ${HF_TOKEN:+set}`). Without it the gated GPQA task is skipped and
   gated models (Llama 4 Scout) can't download; tell the member, then continue if they agree.
+- Run from the repo root (`aiml-inference`, where `.claude/` and `bench/` are); `cd` there first if needed.
 - Linux: `loginctl show-user $USER -p Linger` and `grep KillUserProcesses /etc/systemd/logind.conf`
-  (protocol section 10). Mac: remind them to run `caffeinate -dims` for the length of the run.
+  (protocol section 10). Mac: `run_protocol.sh` keeps the Mac awake for the run (`caffeinate`);
+  if `pmset -g | grep -w sleep` shows a value other than 0, suggest the one-time setting System
+  Settings → Energy → "Prevent automatic sleeping when the display is off".
 
 Done when preflight says `PASS` and the engine env exists.
 
@@ -73,18 +76,17 @@ from the log with its reason.
 $PY bench/harness/estimate_time.py --config bench/configs/<study_id>.json
 ```
 
-Build one table per mode (`stop`, `all`, `cap:10`): minutes per model and in total, plus about
-0.5 to 1 hour per model for the quality phase (protocol section 7). State it as a range:
-actual time ran 0.73× to 2.05× of the projection on the GB10 reference, least certain at 64 and
-128 users.
+Total for `stop` mode = its high end, plus 1 hour per model for the quality phase (protocol
+section 7). Read projections as a range: actual time ran 0.73× to 2.05× of the projection on the
+GB10 reference, least certain at 64 and 128 users.
 
-## 6. Member chooses
+## 6. Mode and time cap (default, no question)
 
-One AskUserQuestion round:
-- **Mode** for 8 to 128 users: `stop` (recommended), `all`, or `cap:<minutes per level>`, each
-  option with its estimated time.
-- **Total cap** in hours (no new level starts after it). Default: the high end of the chosen
-  mode's range plus the quality phase, rounded up.
+Use `stop` mode with a cap of that total, rounded up to whole hours, and tell the member in one
+line: *about <low>–<high> h, running in stop mode (it ends each workload once the model gets too
+slow); cap <h> h*. Ask one AskUserQuestion round instead only when the total is over 4 hours or
+the member asked for complete curves: `stop` (recommended), `all`, or `cap:<minutes per
+level>`, each with its estimated time, and the cap in hours.
 
 For a run longer than an hour, remind them to book the machine in the club channel.
 
@@ -103,15 +105,17 @@ this session, VS Code and SSH closing. Give the member:
 - the same `run_protocol.sh` command again: resume after a stop or a crash
 
 Then start the status loop yourself, without asking: invoke the `loop` skill with the
-argument below (`<study_id>` filled in). It reports every 30 minutes and ends itself when the
-run does. Tell the member it only runs while this Claude Code session stays open (on a Dell,
-inside tmux), that the benchmark keeps going either way, and that *stop the loop* ends it.
+argument below (`<study_id>` filled in). It reports every 30 minutes, and when the run ends it
+stops itself and finishes the study (steps 8 and 9) with no prompt from the member. Tell the
+member it only runs while this Claude Code session stays open (inside tmux), that the benchmark
+keeps going either way, and that *stop the loop* ends it; *check my benchmark* runs steps 8
+and 9 by hand.
 
 ```
-30m Run bench/status.sh <study_id> and read the last lines of bench/.run/<study_id>.log. In one or two lines, tell me whether my benchmark is on track: current model and level, time remaining, and any FAILED lines. When status says done or the process is no longer running, give me a short final summary, stop the loop, and offer to validate and report (benchmark skill step 8).
+30m Run bench/status.sh <study_id> and read the last lines of bench/.run/<study_id>.log. In one or two lines, tell me whether my benchmark is on track: current model and level, time remaining, and any FAILED lines. When status says done or the process is no longer running: stop this loop, then finish the study as the benchmark skill's steps 8 and 9 say (validate, summarize, push the results) without asking me.
 ```
 
-## 8. Validate and report
+## 8. Validate and report (automatic when the run ends)
 
 ```sh
 $PY bench/harness/validate_results.py <study_id>
@@ -125,20 +129,25 @@ $PY bench/harness/validate_results.py <study_id>
   ended each workload, actual time against the estimate (Timing sheet), and the caveats (the
   study's quantization, thinking off, GPU-only power, one machine).
 
-## 9. Share
+## 9. Share (automatic once validation passes)
 
-Once validation passes, and the member says to:
+Push the study to its own branch without moving the member off theirs, so their next study
+starts from the same code. Use the member's name and netid for the commit identity when
+`git config user.email` is empty:
 
 ```sh
-git switch -c results/<study_id>
 git add bench/configs/<study_id>.json bench/results/<study_id>
-git commit -m "results: <study_id>"
-git push -u origin results/<study_id>
+git -c user.name="<member>" -c user.email="<netid>@nd.edu" commit -m "results: <study_id>"
+git push origin HEAD:refs/heads/results/<study_id>
+git reset --soft HEAD~1 && git reset -q          # back to their branch; files stay on disk
 ```
 
-Without push access on the machine, give them
-`tar czf <study_id>.tgz bench/configs/<study_id>.json bench/results/<study_id>` to send to the
-benchmarks lead instead.
+Tell the member the branch name. When the push is refused (no GitHub write access on this
+machine), undo the local commit the same way and tell them to send
+`tar czf <study_id>.tgz bench/configs/<study_id>.json bench/results/<study_id>` to the
+benchmarks lead. When validation fails, push nothing: explain the failures and what fixes them.
+
+If the member was assigned more families, remind them of the next `/benchmark <family>`.
 
 ## Guardrails
 

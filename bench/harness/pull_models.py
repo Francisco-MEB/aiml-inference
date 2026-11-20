@@ -12,11 +12,14 @@ import argparse
 import os
 import subprocess
 import sys
+import tempfile
+import time
 
 import common
 import hf
 
 HF_HUB_VERSION = "2.4.0"          # same version as serving/vllm/uv.lock
+PROGRESS_EVERY_S = 60             # a progress line in the run's log this often while downloading
 
 
 def pull(m, log=print, root=None):
@@ -30,11 +33,34 @@ def pull(m, log=print, root=None):
         log(f"  {m['repo']} is gated: accept its license on huggingface.co and set HF_TOKEN")
     # hf download writes where the harness reads: models/<machine>/ unless HF_HUB_CACHE is set
     # (root: another machine's folder, for bench/download_models.py --machine).
-    env = {**os.environ, "HF_HUB_CACHE": str(root or hf.cache_root())}
-    r = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True,
-                       check=False, env=env)
-    if r.returncode != 0:
-        raise SystemExit(f"download of {m['repo']} failed: {r.stderr.strip()[-600:]}")
+    root = root or hf.cache_root()
+    env = {**os.environ, "HF_HUB_CACHE": str(root)}
+    t0 = time.time()
+    with tempfile.TemporaryFile(mode="w+") as err:
+        p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=err, text=True, env=env)
+        while True:
+            try:
+                p.wait(timeout=PROGRESS_EVERY_S)
+                break
+            except subprocess.TimeoutExpired:
+                log("  " + progress(m, t0, root))
+        if p.returncode != 0:
+            err.seek(0)
+            raise SystemExit(f"download of {m['repo']} failed: {err.read().strip()[-600:]}")
+    log("  " + progress(m, t0, root).replace("downloading", "downloaded"))
+
+
+def progress(m, t0, root=None):
+    """One line: how many of the pinned weight files are on disk, in GB, and the rate."""
+    files = m.get("weight_files") or {}
+    snap = hf.snapshot_dir(m["repo"], m["revision"], root)
+    have = [n for n in files if (snap / n).exists()]
+    gb = sum(files[n]["size"] or 0 for n in have) / 1e9
+    total = sum(f["size"] or 0 for f in files.values()) / 1e9 or m.get("model_blob_gb") or 0
+    mins = (time.time() - t0) / 60
+    rate = f", {gb * 1e3 / max(time.time() - t0, 1):.0f} MB/s" if gb else ""
+    return (f"downloading {m['repo']}: {len(have)}/{len(files)} weight files, "
+            f"{gb:.1f}/{total:.1f} GB after {mins:.0f} min{rate}")
 
 
 def verify(m, rehash=True):

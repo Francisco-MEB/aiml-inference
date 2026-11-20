@@ -12,7 +12,7 @@
 A study is one family x one machine x one quantization (protocol section 1). Each family lists
 its builds per engine from highest to lowest precision. plan_study() takes the largest model of
 the family that fits this machine in any build, then the highest-precision build in which that
-model fits (or the family's preferred_build for this engine, when it names one), and runs every
+model fits (or the family's `prefer` build for this engine, when it names one), and runs every
 family model that build has and that fits. Models without a build in that format are reported,
 never substituted."""
 import argparse
@@ -142,8 +142,9 @@ def plan_study(name, machine=None, cat=None):
     builds = fam["builds"].get(machine["engine"], [])
     # A family can prefer one build over the highest-precision default, with the reason in its
     # notes (Gemma: NVFP4 on Dells, 4-bit on Macs). The stable sort keeps the rest in order.
-    preferred = (fam.get("preferred_build") or {}).get(machine["engine"])
-    builds = sorted(builds, key=lambda b: b["format"] != preferred)
+    prefer = (fam.get("prefer") or {}).get(machine["engine"])
+    if prefer:
+        builds = sorted(builds, key=lambda b: b["format"] != prefer)
     budget = weight_budget_bytes(machine)
     study_set = fam.get("study") or list(fam["models"])     # the family's small/medium/large
     wanted = [only] if only else list(study_set)

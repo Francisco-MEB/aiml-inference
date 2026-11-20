@@ -28,7 +28,13 @@ else                                             # macOS has no setsid: start a 
   nohup "$PY" -c 'import os, sys; os.setsid(); os.execv(sys.argv[1], sys.argv[1:])' \
     "$PY" -u bench/harness/run_protocol.py "${args[@]}" >> "$LOG" 2>&1 < /dev/null &
 fi
-echo "started (pid $!), detached from this session"
+PID=$!
+if [[ "$(uname)" == "Darwin" ]]; then
+  # Keep the Mac awake exactly as long as the run (an idle Mac sleeps even while it works).
+  nohup caffeinate -dims -w "$PID" > /dev/null 2>&1 &
+  echo "keeping this Mac awake until the run ends (caffeinate)"
+fi
+echo "started (pid $PID), detached from this session"
 echo "  progress: bench/status.sh $STUDY"
 echo "  log:      tail -f $LOG"
 echo "  stop:     bench/stop_protocol.sh $STUDY"

@@ -66,6 +66,10 @@ def main():
           f"{free_gb:.0f} GB free in {root}")
     if args.dry_run:
         return
+    # Each model's pinned weight files and sha256 (what fill_digests.py writes into a study):
+    # the progress lines count them while downloading, and the check below compares them.
+    for m in models.values():
+        m["weight_files"] = hf.describe(m["repo"], m["revision"])["weight_files"]
     if not args.verify:
         if need_gb > free_gb:
             sys.exit("not enough free disk space")
@@ -78,8 +82,7 @@ def main():
     print("\nchecking checksums ...")
     bad = []
     for m in models.values():
-        files = hf.describe(m["repo"], m["revision"])["weight_files"]
-        v = hf.verify_cache(m["repo"], m["revision"], files, root=root, rehash=True)
+        v = hf.verify_cache(m["repo"], m["revision"], m["weight_files"], root=root, rehash=True)
         print(f"  {'OK      ' if v['ok'] else 'MISMATCH'} {m['repo']:55} "
               f"{v['size_bytes'] / 1e9:6.1f} GB" + (" (missing files)" if v["missing"] else ""))
         bad += [] if v["ok"] else [m["repo"]]
