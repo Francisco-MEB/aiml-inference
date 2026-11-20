@@ -407,6 +407,28 @@ class OrchestratorTest(unittest.TestCase):
             self.assertEqual(n_runs, len([d for d in study.iterdir()
                                           if (d / "env.json").exists()]))
 
+            # A quality phase is its own run; the merged spreadsheet must carry its scores.
+            speed_run = next(d for d in study.iterdir() if (d / "requests.csv").exists()
+                             and d.name != "combined")
+            qrun = study / "20990101T000000Z_test_quality"
+            qrun.mkdir()
+            for f in ("env.json", "effective_config.json"):
+                shutil.copy(speed_run / f, qrun / f)
+            mk = cfg["models"][0]["key"]
+            common.write_json(qrun / "run.json", {"run_id": qrun.name, "phases": [], "models": [],
+                                                  "quality": [{
+                "model_key": mk, "model_tag": cfg["models"][0]["tag"], "limit": 5,
+                "tasks_requested": ["ifeval"], "tasks_skipped": [], "returncode": 0,
+                "results": [{"task": "ifeval", "metric": "prompt_level_strict_acc,none",
+                             "value": 0.8, "n": 5, "stderr": 0.2}]}]})
+            p3 = subprocess.run([sys.executable, str(BENCH / "harness/merge_study.py"),
+                                 cfg["study"]["id"], "--include-deviations"],
+                                env=env, capture_output=True, text=True, timeout=300)
+            self.assertEqual(p3.returncode, 0, p3.stdout[-2000:] + p3.stderr[-2000:])
+            merged = common.load_json(study / "combined" / "run.json")
+            self.assertEqual([q["model_key"] for q in merged["quality"]], [mk])
+            self.assertTrue((study / "combined" / "report" / "Quality.csv").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

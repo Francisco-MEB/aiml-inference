@@ -102,9 +102,9 @@ def failed_below(study, model, workload, users):
     return ""
 
 
-def quality_runs(study):
+def quality_runs(study, include_deviations=False):
     """{model_key: run folder name} of runs whose quality phase produced results without
-    deviations (newest wins)."""
+    deviations (newest wins); include_deviations also counts test runs."""
     out = {}
     root = common.RESULTS / study
     if not root.is_dir():
@@ -114,7 +114,7 @@ def quality_runs(study):
         if not (run_p.is_file() and env_p.is_file()):
             continue
         env = common.load_json(env_p)
-        if env.get("protocol_deviations"):
+        if env.get("protocol_deviations") and not include_deviations:
             continue
         for q in common.load_json(run_p).get("quality", []):
             if q.get("results") and q.get("returncode") in (0, None):

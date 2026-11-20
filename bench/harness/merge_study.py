@@ -62,6 +62,12 @@ def main():
     cmd = [sys.executable, str(common.BENCH / "harness/merge_runs.py"), "--out", str(out)]
     for mk, dirs in by_model.items():
         cmd += ["--add", quant[mk], mk, *dirs]
+    # Each model's quality phase is its own run: merge the newest one that produced scores, so
+    # the Quality sheet of findings.xlsx carries them.
+    qruns = study_data.quality_runs(a.study, include_deviations=a.include_deviations)
+    qdirs = sorted({str(root / run) for mk, run in qruns.items() if mk in by_model})
+    if qdirs:
+        cmd += ["--quality-from", *qdirs]
     subprocess.run(cmd, check=True)
     timing.sort(key=lambda t: (t["model"], t["users"]))
     fields = sorted({k for t in timing for k in t}, key=lambda k: list(timing[0]).index(k)

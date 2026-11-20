@@ -35,14 +35,62 @@ Started. Status every 30 min.
 
 ## 2. The results
 
-Everything lands in `bench/results/<study_id>/`:
+Everything lands in `bench/results/<study_id>/`. The pilot's folder (2.6 MB, 3 speed levels and
+3 quality attempts for one model) looked like this:
 
-| Path | What |
-|---|---|
-| `combined/findings.xlsx` | the spreadsheet to read: every sheet below |
-| `combined/report/*.csv` | the same sheets as CSV |
-| `combined/requests.csv` | every request, one row each (the raw data) |
-| `<run_id>/` | one folder per model and level, and per quality phase: `env.json` (machine, versions, exact server command), `server_*.log`, `lm_eval/` samples |
+```
+bench/results/qwen_nvfp4_promaxgb10-2c9c_20261119/
+├── combined/                       ← read this
+│   ├── findings.xlsx               ← the spreadsheet (sheets below)
+│   ├── report/                     ← every sheet as CSV: Models, Summary, Capacity, CapacityPivot,
+│   │                                 Scaling, Quality, Timing, Parameters, Environment, Power, Requests
+│   ├── requests.csv                ← every request from every level (105 rows here)
+│   ├── power.csv  timing.csv  run.json  env.json  effective_config.json
+├── time_estimate.json              ← the projection made after calibration
+├── 20261119T223411Z_promaxgb10-2c9c_2eac4691/    ← one folder per model × level (here: 1 user)
+│   ├── requests.csv                ← that level's requests
+│   ├── env.json                    ← machine, versions, the exact server command, KV cache
+│   ├── models.json                 ← weights checked against the pinned sha256 of every file
+│   ├── run.json                    ← phases and timings, thinking check, per-model facts
+│   ├── power.csv                   ← GPU power once a second
+│   ├── preflight.json              ← who else was on the machine (nobody, or it wouldn't run)
+│   ├── effective_config.json       ← the config as run
+│   └── server_qwen3-8b.log         ← vLLM's own log
+├── 20261119T224017Z_…/  20261119T224337Z_…/      ← 2 users, 4 users
+└── 20261119T225914Z_…/                            ← the quality phase
+    ├── lm_eval/qwen3-8b/…/results_*.json          ← lm-eval scores
+    ├── lm_eval/qwen3-8b/…/samples_<task>_*.jsonl  ← every question, the model's answer, the grade
+    └── server_quality_qwen3-8b.log  env.json  run.json  models.json  power.csv …
+```
+
+A full study has the same shape: one folder per model and level it ran (up to 8 levels × 3
+models), one quality folder per model, and one `combined/`.
+
+What's inside the main files (real excerpts):
+
+`env.json`, the reproducibility record of one run:
+```
+host promaxgb10-2c9c · Ubuntu 24.04.5 LTS · NVIDIA GB10 · driver 580.178.04 · CUDA 13.0 · 121.6 GiB
+protocol aiml-bench/2.0 · engine vllm 0.33.0 · quantization nvfp4 · slots 4 · git 6b5f5f98
+server ready in 78 s · weights 5.98 GiB · KV cache 1,374,736 tokens (fp8_e4m3) · prefix caching on
+command: vllm serve <pinned snapshot of nvidia/Qwen3-8B-NVFP4 @ ccd10a89> --max-num-seqs 4
+  --max-model-len 4096 --gpu-memory-utilization 0.85
+  --default-chat-template-kwargs {"enable_thinking":false} --reasoning-parser qwen3
+```
+
+`models.json`: `nvidia/Qwen3-8B-NVFP4 @ ccd10a89…, 2 weight files, 6.40 GB, verified: true`.
+
+`requests.csv`, one row per request (32 columns; a few of them):
+```
+model_repo             prompt_id   users rep req ttft_s  e2e_s  prompt_tok out_tok decode_tps reasoning finish thinking
+nvidia/Qwen3-8B-NVFP4  short_chat  4     0   0   0.039   6.31   38         256     40.6       0         length enable_thinking=false
+```
+
+`power.csv`: `t_unix, t_iso, gpu_power_w, …, gpu_util_pct, gpu_temp_c, gpu_clock_mhz, wall_meter_w`,
+one row per second (wall meter blank unless you add one).
+
+`timing.csv`: actual against projected minutes per model and level (1 user: 6.1 min, the first
+server start compiles kernels; 2 and 4 users: 3.3 min each).
 
 ### Models sheet: one row per model
 
