@@ -57,19 +57,45 @@ class CatalogTest(unittest.TestCase):
         p = catalog.plan_study("qwen", catalog.parse_machine("dell"))
         self.assertEqual(p["build"], "nvfp4")
         self.assertEqual([m["key"] for m in p["models"]],
-                         ["qwen3-8b", "qwen3.8-27b", "qwen3.6-35b-a3b", "qwen3.5-122b-a10b"])
+                         ["qwen3-8b", "qwen3.6-35b-a3b", "qwen3.5-122b-a10b"])
         self.assertTrue(all(m["quantization"] == "nvfp4" for m in p["models"]))
+
+    def test_every_assigned_family_has_three_sizes_on_a_dell(self):
+        for fam in ("kimi", "gemma", "qwen", "glm"):
+            p = catalog.plan_study(fam, catalog.parse_machine("dell"))
+            self.assertEqual([m["size_class"] for m in p["models"]],
+                             ["small", "medium", "large"], fam)
+
+    def test_glm_small_model_is_per_engine(self):
+        dell = catalog.plan_study("glm", catalog.parse_machine("dell"))
+        mac = catalog.plan_study("glm", catalog.parse_machine("mac:128"))
+        self.assertEqual(dell["models"][0]["key"], "glm4.6v-flash")
+        self.assertEqual(mac["models"][0]["key"], "glm4-9b")
+        self.assertEqual(len(dell["models"]), 3)
+        self.assertEqual(len(mac["models"]), 3)
+
+    def test_build_that_holds_all_three_wins_over_a_higher_precision_one(self):
+        # mlx-community has no bf16 Gemma 26B-A4B: 8-bit keeps all three sizes.
+        p = catalog.plan_study("gemma", catalog.parse_machine("mac:128"))
+        self.assertEqual(p["build"], "8bit")
+        self.assertEqual(len(p["models"]), 3)
+
+    def test_kimi_passes_trust_remote_code_on_both_engines(self):
+        for machine in ("dell", "mac:128"):
+            p = catalog.plan_study("kimi", catalog.parse_machine(machine))
+            self.assertTrue(all("--trust-remote-code" in m["server_args"] for m in p["models"]))
 
     def test_dell_gemma_fits_at_bf16(self):
         self.assertEqual(catalog.plan_study("gemma", catalog.parse_machine("dell"))["build"],
                          "bf16")
 
-    def test_small_mac_drops_what_does_not_fit_and_raises_precision(self):
+    def test_small_mac_swaps_in_a_model_that_fits_and_raises_precision(self):
         p = catalog.plan_study("qwen", catalog.parse_machine("mac:64"))
         self.assertEqual(p["build"], "8bit")
         keys = [m["key"] for m in p["models"]]
-        self.assertNotIn("qwen3.5-122b-a10b", keys)
+        self.assertEqual(keys, ["qwen3-8b", "qwen3.8-27b", "qwen3.6-35b-a3b"])
         self.assertEqual([x["key"] for x in p["left_out"]], ["qwen3.5-122b-a10b"])
+        self.assertIn("qwen3.8-27b runs in its place", p["left_out"][0]["reason"])
 
     def test_model_without_a_build_in_the_study_format_is_reported(self):
         p = catalog.plan_study("mistral", catalog.parse_machine("dell"))

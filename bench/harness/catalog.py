@@ -119,32 +119,54 @@ def plan_study(name, machine=None, cat=None):
     fam = cat["families"][fk]
     builds = fam["builds"].get(machine["engine"], [])
     budget = weight_budget_bytes(machine)
-    wanted = [only] if only else list(fam["models"])
+    study_set = fam.get("study") or list(fam["models"])     # the family's small/medium/large
+    wanted = [only] if only else list(study_set)
     if any(not x.get("revision") for b in builds for x in b["models"].values()):
         raise SystemExit("catalog has unpinned builds: run `catalog.py pin` first")
 
     def size(mk):
         return fam["models"][mk]["params_b"]
 
-    # The build is always the family study's (decided by the whole family), so one model
-    # named on its own is measured in the same quantization as its family's study.
-    fitting = [mk for mk in fam["models"] if any(mk in b["models"]
-                                                 and _fits(b["models"][mk], budget)
-                                                 for b in builds)]
+    def fits_any(mk):
+        return any(mk in b["models"] and _fits(b["models"][mk], budget) for b in builds)
+
     left = []
+    # A study model that fits this machine at no build is swapped for the largest other family
+    # model that does, so the family keeps three sizes where the catalog allows.
+    study = list(study_set)
+    extras = sorted((mk for mk in fam["models"] if mk not in study_set and fits_any(mk)),
+                    key=size)
+    for mk in list(study):
+        if not fits_any(mk) and extras:
+            sub = extras.pop()
+            study.append(sub)
+            left.append({"key": mk, "reason": f"too large for this machine at every build; "
+                                              f"{sub} runs in its place"})
+    if not only:
+        wanted = study
     for mk in wanted:
-        if mk not in fitting:
+        if not fits_any(mk) and not any(x["key"] == mk for x in left):
             have = [f"{b['format']} {b['models'][mk].get('weights_gb')} GB" for b in builds
                     if mk in b["models"]]
             left.append({"key": mk, "reason": ("too large for this machine at every build ("
                                                + ", ".join(have) + ")") if have
                          else f"no {machine['engine']} build in the catalog"})
+    # The build is always the family study's (decided by the study's models), so one model
+    # named on its own is measured in the same quantization as its family's study: the
+    # highest-precision build that holds every study model that fits; failing that, the one in
+    # which the largest of them fits.
+    fitting = [mk for mk in dict.fromkeys([*study, *wanted]) if fits_any(mk)]
+    deciders = [mk for mk in fitting if mk in study] or fitting
     if not fitting:
         return {"family": fk, "build": None, "models": [], "left_out": left,
                 "budget_gb": round(budget / 1e9, 1), "machine": machine}
-    largest = max(fitting, key=size)
-    build = next(b for b in builds if largest in b["models"]
-                 and _fits(b["models"][largest], budget))
+    build = next((b for b in builds
+                  if all(mk in b["models"] and _fits(b["models"][mk], budget)
+                         for mk in deciders)), None)
+    if build is None:
+        largest = max(deciders, key=size)
+        build = next(b for b in builds if largest in b["models"]
+                     and _fits(b["models"][largest], budget))
     models = []
     for mk in sorted(wanted, key=size):
         if mk not in fitting:          # already listed in left_out
@@ -170,7 +192,7 @@ def model_entry(fam, mk, x, build, engine):
     """One model as it appears in a study config."""
     meta = fam["models"][mk]
     th = fam.get("thinking", {})
-    args = list(meta.get("vllm_args", fam.get("vllm_args", []))) if engine == "vllm" else []
+    args = list(meta.get(f"{engine}_args", fam.get(f"{engine}_args", [])))
     if engine == "vllm" and x.get("multimodal"):
         args.append("--language-model-only")
     return {"key": mk, "label": meta["label"], "size_class": meta["size_class"],

@@ -266,7 +266,12 @@
             }
           }
         ]
-      }
+      },
+      "study": [
+        "gemma4-e4b",
+        "gemma4-26b-a4b",
+        "gemma4-31b"
+      ]
     },
     "qwen": {
       "label": "Alibaba Qwen",
@@ -566,7 +571,12 @@
             }
           }
         ]
-      }
+      },
+      "study": [
+        "qwen3-8b",
+        "qwen3.6-35b-a3b",
+        "qwen3.5-122b-a10b"
+      ]
     },
     "gpt-oss": {
       "label": "OpenAI gpt-oss",
@@ -658,7 +668,11 @@
             }
           }
         ]
-      }
+      },
+      "study": [
+        "gpt-oss-20b",
+        "gpt-oss-120b"
+      ]
     },
     "llama": {
       "label": "Meta Llama",
@@ -851,7 +865,12 @@
             }
           }
         ]
-      }
+      },
+      "study": [
+        "llama3.1-8b",
+        "llama3.3-70b",
+        "llama4-scout"
+      ]
     },
     "muse": {
       "label": "Meta Muse",
@@ -965,7 +984,10 @@
             }
           }
         ]
-      }
+      },
+      "study": [
+        "muse-glimmer-30b"
+      ]
     },
     "mistral": {
       "label": "Mistral",
@@ -1117,11 +1139,16 @@
             }
           }
         ]
-      }
+      },
+      "study": [
+        "ministral3-14b",
+        "mistral-small3.2-24b",
+        "mistral-small4-119b"
+      ]
     },
     "glm": {
       "label": "Zhipu GLM",
-      "notes": "No vendor 4-bit GLM fits one GB10; the Dell study uses community W4A16 builds (cyankiwi), recorded as a deviation.",
+      "notes": "Small model differs by engine: GLM 4.6V Flash (served text-only) on vLLM, which has a 4-bit build like the rest of the Dell study; GLM 4 9B on MLX, because mlx-lm cannot load GLM 4.6V (it needs mlx-vlm) and GLM 4 9B has no 4-bit build for vLLM. No vendor 4-bit GLM fits one GB10; the Dell study uses community W4A16 builds (cyankiwi), recorded as a deviation.",
       "thinking": {
         "chat_template_kwargs": {
           "enable_thinking": false
@@ -1133,6 +1160,20 @@
         "glm45"
       ],
       "models": {
+        "glm4.6v-flash": {
+          "label": "GLM 4.6V Flash 9B (text)",
+          "size_class": "small",
+          "arch": "dense",
+          "params_b": 10.3,
+          "active_params_b": 10.3
+        },
+        "glm4-9b": {
+          "label": "GLM 4 9B 0414",
+          "size_class": "small",
+          "arch": "dense",
+          "params_b": 9.4,
+          "active_params_b": 9.4
+        },
         "glm4.7-flash": {
           "label": "GLM 4.7 Flash 30B A3B",
           "size_class": "medium",
@@ -1159,6 +1200,17 @@
             "publisher": "cyankiwi (community)",
             "deviation": "community quantization, no vendor 4-bit build fits",
             "models": {
+              "glm4.6v-flash": {
+                "repo": "cyankiwi/GLM-4.6V-Flash-AWQ-4bit",
+                "revision": "cae6329123ad3bcc423c0f659571cba74f44a5ba",
+                "weights_gb": 8.86,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "compressed-tensors"
+              },
               "glm4.7-flash": {
                 "repo": "cyankiwi/GLM-4.7-Flash-AWQ-4bit",
                 "revision": "f2af2359081b56d020f550c3314a54669301979c",
@@ -1189,6 +1241,17 @@
             "format": "bf16",
             "publisher": "mlx-community",
             "models": {
+              "glm4-9b": {
+                "repo": "mlx-community/GLM-4-9B-0414-bf16",
+                "revision": "b2959ed64bf5519833fe3e126a9fed4a2cd89933",
+                "weights_gb": 18.8,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              },
               "glm4.7-flash": {
                 "repo": "mlx-community/GLM-4.7-Flash-bf16",
                 "revision": "8a41c558f63134c7d08f58f9c91b83183d214763",
@@ -1217,6 +1280,17 @@
             "format": "8bit",
             "publisher": "mlx-community",
             "models": {
+              "glm4-9b": {
+                "repo": "mlx-community/GLM-4-9B-0414-8bit",
+                "revision": "e600f69427fb323dc9f0fb0a765ce6de6cdb045f",
+                "weights_gb": 9.99,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
               "glm4.7-flash": {
                 "repo": "mlx-community/GLM-4.7-Flash-8bit",
                 "revision": "b3a202c6df57f7297fb351486938952352dcd25a",
@@ -1245,6 +1319,17 @@
             "format": "4bit",
             "publisher": "mlx-community",
             "models": {
+              "glm4-9b": {
+                "repo": "mlx-community/GLM-4-9B-0414-4bit",
+                "revision": "fecf35efe04b11a7e11ae434bf30693ac4c38e2c",
+                "weights_gb": 5.29,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
               "glm4.7-flash": {
                 "repo": "mlx-community/GLM-4.7-Flash-4bit",
                 "revision": "1454cffb1a21737e162f508e5bc70be9def89276",
@@ -1260,6 +1345,138 @@
                 "repo": "mlx-community/GLM-4.5-Air-4bit",
                 "revision": "60837794f3caafc4682dd1a9188a82c55a9100ef",
                 "weights_gb": 60.14,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              }
+            }
+          }
+        ]
+      },
+      "study": [
+        "glm4.6v-flash",
+        "glm4-9b",
+        "glm4.7-flash",
+        "glm4.5-air"
+      ]
+    },
+    "kimi": {
+      "label": "Moonshot Kimi",
+      "notes": "Kimi K2 and K3 (~1T parameters) fit no single club machine; the study uses Moonlight 16B-A3B, Kimi-Linear 48B-A3B and Kimi-Dev 72B (a coding model). No vendor quantized builds exist for these, so the Dell study is community W4A16 (a deviation) and the Mac study MLX 4-bit, the one format all three have.",
+      "thinking": {
+        "note": "no reasoning mode (unverified for Kimi-Dev; the thinking probe records what comes back)"
+      },
+      "vllm_args": [
+        "--trust-remote-code"
+      ],
+      "mlx_args": [
+        "--trust-remote-code"
+      ],
+      "models": {
+        "moonlight-16b-a3b": {
+          "label": "Moonlight 16B A3B Instruct",
+          "size_class": "small",
+          "arch": "moe",
+          "params_b": 16.0,
+          "active_params_b": 3.0
+        },
+        "kimi-linear-48b-a3b": {
+          "label": "Kimi-Linear 48B A3B Instruct",
+          "size_class": "medium",
+          "arch": "moe",
+          "params_b": 48.0,
+          "active_params_b": 3.0
+        },
+        "kimi-dev-72b": {
+          "label": "Kimi-Dev 72B",
+          "size_class": "large",
+          "arch": "dense",
+          "params_b": 72.7,
+          "active_params_b": 72.7
+        }
+      },
+      "study": [
+        "moonlight-16b-a3b",
+        "kimi-linear-48b-a3b",
+        "kimi-dev-72b"
+      ],
+      "builds": {
+        "vllm": [
+          {
+            "format": "w4a16",
+            "publisher": "cyankiwi / Neural Magic (community)",
+            "deviation": "community quantization, no vendor quantized build exists",
+            "models": {
+              "moonlight-16b-a3b": {
+                "repo": "nm-testing/Moonlight-16B-A3B.w4a16",
+                "revision": "71548f52bf1b240d135fbf1481fa843f26fa4e71",
+                "weights_gb": 9.23,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "compressed-tensors"
+              },
+              "kimi-linear-48b-a3b": {
+                "repo": "cyankiwi/Kimi-Linear-48B-A3B-Instruct-AWQ-4bit",
+                "revision": "50cc9c376c3440e8cc465f1274304f903319a9f1",
+                "weights_gb": 30.53,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "compressed-tensors"
+              },
+              "kimi-dev-72b": {
+                "repo": "cyankiwi/Kimi-Dev-72B-AWQ-4bit",
+                "revision": "d2c89703b80697378b8b94e699b7b58835e3fe6e",
+                "weights_gb": 44.48,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "compressed-tensors"
+              }
+            }
+          }
+        ],
+        "mlx": [
+          {
+            "format": "4bit",
+            "publisher": "mlx-community",
+            "models": {
+              "moonlight-16b-a3b": {
+                "repo": "mlx-community/Moonlight-16B-A3B-Instruct-4-bit",
+                "revision": "8503ff1a2065f57fc9dc8fb95fabd864849c0744",
+                "weights_gb": 8.98,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "kimi-linear-48b-a3b": {
+                "repo": "mlx-community/Kimi-Linear-48B-A3B-Instruct-4bit",
+                "revision": "919175d75427f1c10cfc17e7254b53295edddf72",
+                "weights_gb": 27.64,
+                "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
+              "kimi-dev-72b": {
+                "repo": "mlx-community/Kimi-Dev-72B-4bit",
+                "revision": "4143c71dfd200e9491c4a66c4b78bf444b47ee69",
+                "weights_gb": 40.9,
                 "multimodal": false,
                 "gated": false,
                 "download_exclude": [
