@@ -26,6 +26,7 @@ $PY bench/harness/preflight.py
   `cd serving/mlx && uv sync` on a Mac.
 - `HF_TOKEN` exported (`echo ${HF_TOKEN:+set}`). Without it the gated GPQA task is skipped and
   gated models (Llama 4 Scout) can't download; tell the member, then continue if they agree.
+- Run from the repo root (`aiml-inference`, where `.claude/` and `bench/` are); `cd` there first if needed.
 - Linux: `loginctl show-user $USER -p Linger` and `grep KillUserProcesses /etc/systemd/logind.conf`
   (protocol section 10). Mac: `run_protocol.sh` keeps the Mac awake for the run (`caffeinate`);
   if `pmset -g | grep -w sleep` shows a value other than 0, suggest the one-time setting System
@@ -101,15 +102,17 @@ this session, VS Code and SSH closing. Give the member:
 - the same `run_protocol.sh` command again: resume after a stop or a crash
 
 Then start the status loop yourself, without asking: invoke the `loop` skill with the
-argument below (`<study_id>` filled in). It reports every 30 minutes and ends itself when the
-run does. Tell the member it only runs while this Claude Code session stays open (on a Dell,
-inside tmux), that the benchmark keeps going either way, and that *stop the loop* ends it.
+argument below (`<study_id>` filled in). It reports every 30 minutes, and when the run ends it
+stops itself and finishes the study (steps 8 and 9) with no prompt from the member. Tell the
+member it only runs while this Claude Code session stays open (inside tmux), that the benchmark
+keeps going either way, and that *stop the loop* ends it; *check my benchmark* runs steps 8
+and 9 by hand.
 
 ```
-30m Run bench/status.sh <study_id> and read the last lines of bench/.run/<study_id>.log. In one or two lines, tell me whether my benchmark is on track: current model and level, time remaining, and any FAILED lines. When status says done or the process is no longer running, give me a short final summary, stop the loop, and offer to validate and report (benchmark skill step 8).
+30m Run bench/status.sh <study_id> and read the last lines of bench/.run/<study_id>.log. In one or two lines, tell me whether my benchmark is on track: current model and level, time remaining, and any FAILED lines. When status says done or the process is no longer running: stop this loop, then finish the study as the benchmark skill's steps 8 and 9 say (validate, summarize, push the results) without asking me.
 ```
 
-## 8. Validate and report
+## 8. Validate and report (automatic when the run ends)
 
 ```sh
 $PY bench/harness/validate_results.py <study_id>
@@ -123,20 +126,25 @@ $PY bench/harness/validate_results.py <study_id>
   ended each workload, actual time against the estimate (Timing sheet), and the caveats (the
   study's quantization, thinking off, GPU-only power, one machine).
 
-## 9. Share
+## 9. Share (automatic once validation passes)
 
-Once validation passes, and the member says to:
+Push the study to its own branch without moving the member off theirs, so their next study
+starts from the same code. Use the member's name and netid for the commit identity when
+`git config user.email` is empty:
 
 ```sh
-git switch -c results/<study_id>
 git add bench/configs/<study_id>.json bench/results/<study_id>
-git commit -m "results: <study_id>"
-git push -u origin results/<study_id>
+git -c user.name="<member>" -c user.email="<netid>@nd.edu" commit -m "results: <study_id>"
+git push origin HEAD:refs/heads/results/<study_id>
+git reset --soft HEAD~1 && git reset -q          # back to their branch; files stay on disk
 ```
 
-Without push access on the machine, give them
-`tar czf <study_id>.tgz bench/configs/<study_id>.json bench/results/<study_id>` to send to the
-benchmarks lead instead.
+Tell the member the branch name. When the push is refused (no GitHub write access on this
+machine), undo the local commit the same way and tell them to send
+`tar czf <study_id>.tgz bench/configs/<study_id>.json bench/results/<study_id>` to the
+benchmarks lead. When validation fails, push nothing: explain the failures and what fixes them.
+
+If the member was assigned more families, remind them of the next `/benchmark <family>`.
 
 ## Guardrails
 
