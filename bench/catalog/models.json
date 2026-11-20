@@ -1,9 +1,10 @@
 {
   "catalog_version": 1,
-  "_readme": "The models the club benchmarks, and the exact builds per engine. Edit the repos here; `python3 bench/harness/catalog.py pin` fills revision, weights_gb, format, bits, multimodal and gated from the Hugging Face API. Members never edit this: the benchmark skill reads it. Build options per engine are ordered from highest to lowest precision; plan_study() picks the highest one in which the family's largest model fits the machine (benchmark-protocol.md section 1).",
+  "_readme": "The models the club benchmarks, and the exact builds per engine. Edit the repos here; `python3 bench/harness/catalog.py pin` fills revision, weights_gb, format, bits, multimodal and gated from the Hugging Face API. Members never edit this: the benchmark skill reads it. Build options per engine are ordered from highest to lowest precision; plan_study() picks the highest one in which the family's largest model fits the machine (benchmark-protocol.md section 1). A family's `preferred_build` ({engine: format}) puts that build first instead, with the reason in its notes.",
   "families": {
     "gemma": {
       "label": "Google Gemma 4",
+      "notes": "Small to large: Gemma 4 12B (dense, a plain parameter count, unlike E4B's 'effective' 4B, which also has no NVFP4 build), 26B-A4B (Google's only MoE) and 31B (dense: Google's largest open model; there is no bigger Gemma MoE). preferred_build: the Dell study runs Red Hat AI's NVFP4 builds rather than the BF16 the highest-precision rule would pick, because NVFP4 is what campus would serve: about 2.5-3x the per-user speed and far more KV-cache room for many users. Macs prefer MLX 4-bit for the same reason, and so the Mac Studio (128 GB) against a GB10 (128 GB) is 4-bit against 4-bit, not BF16 against NVFP4.",
       "thinking": {
         "chat_template_kwargs": {
           "enable_thinking": false
@@ -24,7 +25,7 @@
         },
         "gemma4-12b": {
           "label": "Gemma 4 12B",
-          "size_class": "medium",
+          "size_class": "small",
           "arch": "dense",
           "params_b": 12.0,
           "active_params_b": 12.0
@@ -43,6 +44,10 @@
           "params_b": 31.0,
           "active_params_b": 31.0
         }
+      },
+      "preferred_build": {
+        "vllm": "nvfp4",
+        "mlx": "4bit"
       },
       "builds": {
         "vllm": [
@@ -145,6 +150,28 @@
                 "repo": "mlx-community/gemma-4-e4b-it-bf16",
                 "revision": "eec12d0899edea9b738ab1009af9159cdfd70d71",
                 "weights_gb": 15.88,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              },
+              "gemma4-12b": {
+                "repo": "mlx-community/gemma-4-12B-it-bf16",
+                "revision": "afb7b215e9fe3b3eaef462b27d5c9d9b1ba0565b",
+                "weights_gb": 23.92,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              },
+              "gemma4-26b-a4b": {
+                "repo": "mlx-community/gemma-4-26b-a4b-it-bf16",
+                "revision": "e13fae2a81ec07e3092a3ebb70c80970b640dc3c",
+                "weights_gb": 51.61,
                 "multimodal": true,
                 "gated": false,
                 "download_exclude": [
@@ -268,14 +295,14 @@
         ]
       },
       "study": [
-        "gemma4-e4b",
+        "gemma4-12b",
         "gemma4-26b-a4b",
         "gemma4-31b"
       ]
     },
     "qwen": {
       "label": "Alibaba Qwen",
-      "notes": "Mixed generations on purpose: NVIDIA publishes NVFP4 for Qwen3 8B (the newest small Qwen with an NVFP4 build), Qwen3.8 27B, Qwen3.6 35B-A3B and Qwen3.5 122B-A10B.",
+      "notes": "Small to large: Qwen3.5 9B (dense), Qwen3.6 35B-A3B (the class the campus server runs) and Qwen3.5 122B-A10B (the largest Qwen that fits one GB10; its FP8 build is the first two-node test). Only NVFP4 holds the 122B on a GB10, so the Dell study is NVFP4: NVIDIA's builds, and Red Hat AI's for the 9B (Qwen3 8B was the small model until that build appeared). Qwen3 8B and Qwen3.8 27B stay as stand-ins for machines a study model doesn't fit.",
       "thinking": {
         "chat_template_kwargs": {
           "enable_thinking": false
@@ -293,6 +320,13 @@
           "arch": "dense",
           "params_b": 8.2,
           "active_params_b": 8.2
+        },
+        "qwen3.5-9b": {
+          "label": "Qwen3.5 9B",
+          "size_class": "small",
+          "arch": "dense",
+          "params_b": 9.65,
+          "active_params_b": 9.65
         },
         "qwen3.8-27b": {
           "label": "Qwen3.8 27B",
@@ -320,7 +354,7 @@
         "vllm": [
           {
             "format": "fp8",
-            "publisher": "Qwen / NVIDIA",
+            "publisher": "Qwen / NVIDIA / Red Hat AI",
             "models": {
               "qwen3-8b": {
                 "repo": "nvidia/Qwen3-8B-FP8",
@@ -332,6 +366,17 @@
                   "*/*"
                 ],
                 "detected_format": "modelopt"
+              },
+              "qwen3.5-9b": {
+                "repo": "RedHatAI/Qwen3.5-9B-FP8-dynamic",
+                "revision": "790f0576d2d77dd5322aa0603a470bd9e3a3d1f6",
+                "weights_gb": 14.01,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "compressed-tensors"
               },
               "qwen3.8-27b": {
                 "repo": "Qwen/Qwen3.8-27B-FP8",
@@ -370,7 +415,7 @@
           },
           {
             "format": "nvfp4",
-            "publisher": "NVIDIA",
+            "publisher": "NVIDIA / Red Hat AI",
             "models": {
               "qwen3-8b": {
                 "repo": "nvidia/Qwen3-8B-NVFP4",
@@ -382,6 +427,17 @@
                   "*/*"
                 ],
                 "detected_format": "modelopt"
+              },
+              "qwen3.5-9b": {
+                "repo": "RedHatAI/Qwen3.5-9B-NVFP4",
+                "revision": "a4df85a20fb7e54740f564f15af0c2f5d9c6616c",
+                "weights_gb": 9.36,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "compressed-tensors"
               },
               "qwen3.8-27b": {
                 "repo": "nvidia/Qwen3.8-27B-NVFP4",
@@ -429,6 +485,17 @@
                 "revision": "85dd0f16bfe491befbc9cf0b4e966664236e5050",
                 "weights_gb": 16.38,
                 "multimodal": false,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "bf16"
+              },
+              "qwen3.5-9b": {
+                "repo": "mlx-community/Qwen3.5-9B-bf16",
+                "revision": "27cdb77d9381d508abfe5d4e06bcb95471e312ac",
+                "weights_gb": 18.82,
+                "multimodal": true,
                 "gated": false,
                 "download_exclude": [
                   "*/*"
@@ -485,6 +552,17 @@
                 ],
                 "detected_format": "mlx-affine"
               },
+              "qwen3.5-9b": {
+                "repo": "mlx-community/Qwen3.5-9B-8bit",
+                "revision": "16daa4818c54ce5f5436f929d52542eb65bbed9d",
+                "weights_gb": 10.43,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
               "qwen3.8-27b": {
                 "repo": "mlx-community/Qwen3.8-27B-8bit",
                 "revision": "1159008f24a3f97d7afd366fcfee9a79f3bd2b94",
@@ -535,6 +613,17 @@
                 ],
                 "detected_format": "mlx-affine"
               },
+              "qwen3.5-9b": {
+                "repo": "mlx-community/Qwen3.5-9B-4bit",
+                "revision": "8b2b98c00a6b4d291155e4890773ca8f769aee53",
+                "weights_gb": 5.95,
+                "multimodal": true,
+                "gated": false,
+                "download_exclude": [
+                  "*/*"
+                ],
+                "detected_format": "mlx-affine"
+              },
               "qwen3.8-27b": {
                 "repo": "mlx-community/Qwen3.8-27B-4bit",
                 "revision": "b935172e4bb5dcd0543774a34748fb92422e3027",
@@ -573,7 +662,7 @@
         ]
       },
       "study": [
-        "qwen3-8b",
+        "qwen3.5-9b",
         "qwen3.6-35b-a3b",
         "qwen3.5-122b-a10b"
       ]
@@ -1365,7 +1454,7 @@
     },
     "kimi": {
       "label": "Moonshot Kimi",
-      "notes": "Kimi K2 and K3 (~1T parameters) fit no single club machine; the study uses Moonlight 16B-A3B, Kimi-Linear 48B-A3B and Kimi-Dev 72B (a coding model). No vendor quantized builds exist for these, so the Dell study is community W4A16 (a deviation) and the Mac study MLX 4-bit, the one format all three have.",
+      "notes": "Kimi K2 and K3 (~1T parameters) fit no single club machine; the study uses Moonlight 16B-A3B, Kimi-Linear 48B-A3B and Kimi-Dev 72B (a coding model). No vendor quantized builds exist for these, so the Dell study is community W4A16 (a deviation) and the Mac study MLX 4-bit, the one format all three have. Moonlight's config stops at 8,192 tokens, below the quality phase's 16,384-token context (protocol section 7), so vLLM gets --hf-overrides to raise max_position_embeddings to 16384. It has no RoPE scaling: an answer that runs past 8,192 tokens goes beyond its trained length, and its score shows that.",
       "thinking": {
         "note": "no reasoning mode (unverified for Kimi-Dev; the thinking probe records what comes back)"
       },
@@ -1381,7 +1470,12 @@
           "size_class": "small",
           "arch": "moe",
           "params_b": 16.0,
-          "active_params_b": 3.0
+          "active_params_b": 3.0,
+          "vllm_args": [
+            "--trust-remote-code",
+            "--hf-overrides",
+            "{\"max_position_embeddings\": 16384}"
+          ]
         },
         "kimi-linear-48b-a3b": {
           "label": "Kimi-Linear 48B A3B Instruct",

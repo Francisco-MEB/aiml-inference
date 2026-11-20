@@ -9,14 +9,12 @@ dependencies = [
 ]
 
 [dependency-groups]
-# scripts/nvfp4_quantization.py (NVFP4 experiments on a GB10). Not installed by a plain
-# `uv sync`, so the benchmark setup stays light (CLAUDE.md: no torch in the root env by default):
+# scripts/nvfp4_quantization.py (NVFP4 checkpoints with llm-compressor, served by vLLM). Not installed by a
+# plain `uv sync`, so the benchmark setup stays light (CLAUDE.md: no torch in the root env by default):
 #   uv run --group quantize scripts/nvfp4_quantization.py Qwen/Qwen3-4B
+# llmcompressor 0.15.0 caps torch at 2.14.1 and transformers at 5.21.0; it pulls in both, plus datasets.
 quantize = [
-    "accelerate>=1.16.0",
-    "kernels>=0.18.2,<0.19",
-    "torch>=2.15.0",
-    "transformers>=5.23.0",
+    "llmcompressor==0.15.0",
 ]
 
 # basedpyright also reads [tool.pyright]; venv settings let plain Pyright find the uv environment.

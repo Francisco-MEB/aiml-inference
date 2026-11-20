@@ -7,6 +7,7 @@ Standalone benchmarking and measurement tools. Each script is self-contained and
 | [`ollama_concurrency_probe.py`](ollama_concurrency_probe.py) | How does one Ollama server hold up as more users hit it at the same time? |
 | [`openai_capacity_probe.py`](openai_capacity_probe.py) | The same question for any OpenAI-compatible server (vLLM, Ollama, either cluster), including several servers at once |
 | [`sample_node.py`](sample_node.py) | While load runs: is the GPU, the CPU (Python) or KV-cache memory the bottleneck? |
+| [`nvfp4_quantization.py`](nvfp4_quantization.py) | How do I get an NVFP4 copy of a Hugging Face model that vLLM can serve? Not stdlib-only: `uv run --group quantize scripts/nvfp4_quantization.py <model_id> [--samples N]` writes `models/dell/<model_id>-NVFP4/` (llm-compressor, compressed-tensors format) |
 
 The capacity method, how to read the results, and campus sizing are in [`docs/capacity/`](../docs/capacity/README.md).
 

@@ -58,10 +58,13 @@ Done when `fill_digests.py` lists every model's weight files and the check print
 bench/run_protocol.sh --config bench/configs/<study_id>.json --calibrate
 ```
 
-It downloads each model at its pinned commit, verifies every weight file, and measures levels
-1, 2 and 4: real data that stays in the study. Large models take a while to download; give the
-member `bench/status.sh <study_id>` and `tail -f bench/.run/<study_id>.log`, and check back
-when they return. Done when status says `done`; report every `FAILED` or `SERVER FAILED` line
+It downloads each model at its pinned commit into this machine's folder (`models/dell/`,
+`models/mac/studio/` or `models/mac/mini/`), verifies every weight file, and
+measures levels 1, 2 and 4: real data that stays in the study. Large models take a while to
+download: `uv run bench/download_models.py <assignment>` fetches them ahead of time (a re-run
+resumes, and the calibration then skips the download). Give the member
+`bench/status.sh <study_id>` and `tail -f bench/.run/<study_id>.log`, and check back when they
+return. Done when status says `done`; report every `FAILED` or `SERVER FAILED` line
 from the log with its reason.
 
 ## 5. Estimate the time

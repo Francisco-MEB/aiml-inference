@@ -30,7 +30,9 @@ build format, so small → large is a like-for-like comparison. `catalog.py plan
 
 1. the **largest** model of the family that fits this machine in any build;
 2. the **highest-precision** build in which that model fits (order: BF16, then 8-bit / FP8,
-   then 4-bit);
+   then 4-bit), unless the family names a preferred build for this engine (catalog
+   `preferred_build`, with the reason in the family's notes: Gemma runs NVFP4 on the Dells and
+   4-bit on the Macs);
 3. every family model that has that build and fits. A model without a build in that format,
    or too large, is listed as **left out** with the reason, never swapped for another build.
 

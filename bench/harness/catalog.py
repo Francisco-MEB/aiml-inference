@@ -5,14 +5,16 @@
   python3 bench/harness/catalog.py plan qwen                # what a Qwen study runs on THIS machine
   python3 bench/harness/catalog.py plan gpt-oss-120b        # a single model
   python3 bench/harness/catalog.py plan qwen --machine mac:64 --write   # pretend 64 GB Mac; write config
+  python3 bench/harness/catalog.py plan qwen --machine mini # our 32 GB Mac minis (studio: 128 GB)
   python3 bench/harness/catalog.py pin                      # maintainers: fill revisions etc. from the Hub
   python3 bench/harness/catalog.py verify                   # maintainers: every pin still resolves
 
 A study is one family x one machine x one quantization (protocol section 1). Each family lists
 its builds per engine from highest to lowest precision. plan_study() takes the largest model of
 the family that fits this machine in any build, then the highest-precision build in which that
-model fits, and runs every family model that build has and that fits. Models without a build
-in that format are reported, never substituted."""
+model fits (or the family's preferred_build for this engine, when it names one), and runs every
+family model that build has and that fits. Models without a build in that format are reported,
+never substituted."""
 import argparse
 import copy
 import json
@@ -47,8 +49,13 @@ def detect_machine():
         mem = int(common.sh("sysctl -n hw.memsize") or 0)
         chip = common.sh("sysctl -n machdep.cpu.brand_string") or "Apple Silicon"
         model = common.sh("sysctl -n hw.model")
+        # "Model Name: Mac Studio" picks this Mac's folder under models/ (mac/studio, mac/mini).
+        hw = common.sh("system_profiler SPHardwareDataType")
+        name = next((line.split(":", 1)[1].strip() for line in hw.splitlines()
+                     if line.strip().startswith("Model Name:")), "")
         return {"engine": "mlx", "hostname": host, "mem_bytes": mem,
-                "hardware": f"{model} {chip}, {mem / 2**30:.0f} GiB unified".strip()}
+                "hardware": f"{model} {chip}, {mem / 2**30:.0f} GiB unified".strip(),
+                "models_dir": mac_models_dir(name)}
     mem = 0
     try:
         with open("/proc/meminfo") as f:
@@ -58,21 +65,36 @@ def detect_machine():
     gpu = common.sh("nvidia-smi --query-gpu=name --format=csv,noheader").splitlines()
     return {"engine": "vllm", "hostname": host, "mem_bytes": mem,
             "hardware": f"{gpu[0] if gpu else 'unknown GPU'}, {mem / 2**30:.0f} GiB "
-                        f"{'unified' if gpu and 'GB10' in gpu[0] else 'system'} memory"}
+                        f"{'unified' if gpu and 'GB10' in gpu[0] else 'system'} memory",
+            "models_dir": "dell"}
+
+
+def mac_models_dir(model_name):
+    # A Mac's folder under models/, from its model name: "Mac Studio" -> mac/studio,
+    # "Mac mini" -> mac/mini, "MacBook Pro" -> mac/macbook-pro.
+    name = model_name.strip().lower()
+    name = name[len("mac "):] if name.startswith("mac ") else name
+    return "mac/" + (re.sub(r"[^a-z0-9]+", "-", name).strip("-") or "unknown")
 
 
 def parse_machine(spec):
-    """'auto', 'dell' (a GB10 like ours) or 'mac:<GiB>' (for planning on another machine)."""
+    """'auto', 'dell' (a GB10 like ours), 'studio' / 'mini' (our 128 GB Mac Studio and 32 GB
+    Mac minis) or 'mac:<GiB>' (for planning on another machine)."""
     if spec in (None, "auto"):
         return detect_machine()
     if spec == "dell":
         return {"engine": "vllm", "hostname": "gb10", "mem_bytes": 127533184 * 1024,
-                "hardware": "Dell Pro Max GB10, 122 GiB unified memory"}
+                "hardware": "Dell Pro Max GB10, 122 GiB unified memory", "models_dir": "dell"}
+    if spec in ("studio", "mini"):
+        gib, label = (128, "Mac Studio") if spec == "studio" else (32, "Mac mini")
+        return {"engine": "mlx", "hostname": f"mac-{spec}", "mem_bytes": gib * 2**30,
+                "hardware": f"{label}, {gib} GiB unified memory", "models_dir": f"mac/{spec}"}
     if spec.startswith("mac:"):
         gib = float(spec.split(":")[1])
         return {"engine": "mlx", "hostname": f"mac-{gib:.0f}g", "mem_bytes": int(gib * 2**30),
-                "hardware": f"Mac, {gib:.0f} GiB unified memory"}
-    raise SystemExit(f"unknown machine {spec!r}: use auto, dell or mac:<GiB>")
+                "hardware": f"Mac, {gib:.0f} GiB unified memory",
+                "models_dir": f"mac/{gib:.0f}gb"}
+    raise SystemExit(f"unknown machine {spec!r}: use auto, dell, studio, mini or mac:<GiB>")
 
 
 def weight_budget_bytes(machine):
@@ -118,6 +140,10 @@ def plan_study(name, machine=None, cat=None):
                          f"{', '.join(cat['families'])}. Ask the benchmarks lead to add it.")
     fam = cat["families"][fk]
     builds = fam["builds"].get(machine["engine"], [])
+    # A family can prefer one build over the highest-precision default, with the reason in its
+    # notes (Gemma: NVFP4 on Dells, 4-bit on Macs). The stable sort keeps the rest in order.
+    preferred = (fam.get("preferred_build") or {}).get(machine["engine"])
+    builds = sorted(builds, key=lambda b: b["format"] != preferred)
     budget = weight_budget_bytes(machine)
     study_set = fam.get("study") or list(fam["models"])     # the family's small/medium/large
     wanted = [only] if only else list(study_set)
@@ -299,7 +325,7 @@ def main():
     sub.add_parser("list")
     pl = sub.add_parser("plan")
     pl.add_argument("name", help="family (qwen), model key (gpt-oss-120b) or repo id")
-    pl.add_argument("--machine", default="auto", help="auto | dell | mac:<GiB>")
+    pl.add_argument("--machine", default="auto", help="auto | dell | studio | mini | mac:<GiB>")
     pl.add_argument("--member", default=os.environ.get("USER", ""))
     pl.add_argument("--write", action="store_true", help="write bench/configs/<study_id>.json")
     pl.add_argument("--json", action="store_true")

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Downloads each configured model at its pinned revision into the Hugging Face cache and
-verifies the weights against the pinned sha256 of every file (fill_digests.py writes them).
+"""Downloads each configured model at its pinned revision into the Hugging Face cache (this
+machine's folder under the repo's models/, or HF_HUB_CACHE) and verifies the weights against the
+pinned sha256 of every file (fill_digests.py writes them).
 Writes models.json (what was actually on disk) for env.json.
 
   python3 harness/pull_models.py --config configs/<study>.json [--models k1 k2] [--no-pull]
@@ -18,7 +19,7 @@ import hf
 HF_HUB_VERSION = "2.4.0"          # same version as serving/vllm/uv.lock
 
 
-def pull(m, log=print):
+def pull(m, log=print, root=None):
     cmd = ["uvx", "--from", f"huggingface_hub=={HF_HUB_VERSION}", "hf", "download", m["repo"],
            "--revision", m["revision"]]
     for pat in m.get("download_exclude") or hf.DOWNLOAD_EXCLUDE:
@@ -27,8 +28,11 @@ def pull(m, log=print):
     if m.get("gated") and not (os.environ.get("HF_TOKEN") or os.environ.get(
             "HUGGING_FACE_HUB_TOKEN")):
         log(f"  {m['repo']} is gated: accept its license on huggingface.co and set HF_TOKEN")
+    # hf download writes where the harness reads: models/<machine>/ unless HF_HUB_CACHE is set
+    # (root: another machine's folder, for bench/download_models.py --machine).
+    env = {**os.environ, "HF_HUB_CACHE": str(root or hf.cache_root())}
     r = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True,
-                       check=False)
+                       check=False, env=env)
     if r.returncode != 0:
         raise SystemExit(f"download of {m['repo']} failed: {r.stderr.strip()[-600:]}")
 

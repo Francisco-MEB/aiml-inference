@@ -4,6 +4,7 @@ sha256 of every root-level *.safetensors file, which the Hugging Face cache uses
 
 Only root-level files count: some repos also ship an `original/` or `metal/` copy that no
 server loads, and downloads skip every subfolder (DOWNLOAD_EXCLUDE)."""
+import functools
 import json
 import os
 import pathlib
@@ -96,12 +97,22 @@ def describe(repo, revision="main"):
 
 # ---- local cache -------------------------------------------------------------------------
 
-def cache_root():
+def cache_root(machine=None):
+    # Downloaded weights live in models/<machine>/ (gitignored, Hugging Face cache layout):
+    # models/dell on the Dells, models/mac/studio and models/mac/mini on the Macs, so each
+    # machine's folder can be copied as is. Without a machine, it is this one. HF_HUB_CACHE
+    # overrides it, e.g. to share one copy between accounts.
     hub = os.environ.get("HF_HUB_CACHE")
     if hub:
         return pathlib.Path(hub)
-    home = os.environ.get("HF_HOME") or os.path.expanduser("~/.cache/huggingface")
-    return pathlib.Path(home) / "hub"
+    return common.REPO / "models" / (machine["models_dir"] if machine else _this_machine_dir())
+
+
+@functools.lru_cache(maxsize=None)
+def _this_machine_dir():
+    # Imported here so hf stays importable on its own (catalog builds on it for pinning).
+    import catalog
+    return catalog.detect_machine()["models_dir"]
 
 
 def snapshot_dir(repo, revision, root=None):

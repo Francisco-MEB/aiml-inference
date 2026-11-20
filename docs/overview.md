@@ -43,7 +43,7 @@ CRC funds **$50k of hardware** for **two competing inference clusters**. Both ge
 | Lockdown | Campus provider only; no share, update checks, web search | Code and conversations stay on campus | CRC policy |
 | Git | Work on `dev`, PRs to `main` | Team preference | n/a |
 | Club benchmark | `aiml-bench/2.0` (`bench/`): vLLM on Dells, MLX on Macs, one study = family × machine × one quantization, small → large; thinking off; slots = users; core quality via lm-eval once per build | Same numbers from every member; Ollama isn't what campus would serve; quality belongs to the build, not the machine | Thinking-on quality, ShareGPT traffic, LiveCodeBench / HLE / MRCR / ALCE, two-node runs |
-| Benchmark models | `bench/catalog/models.json`: every build pinned to a commit, per engine, highest precision first; members can't improvise tags | Reproducible and comparable small → large | New families or builds (catalog `pin`) |
+| Benchmark models | `bench/catalog/models.json`: every build pinned to a commit, per engine, highest precision first unless a family names a `preferred_build`; members can't improvise tags. Single-node lineup (2026-11-20): small / medium / large per family, MoE for the bigger classes where the family has one (Qwen3.5 9B · 3.6 35B-A3B · 3.5 122B-A10B; Gemma 4 12B · 26B-A4B · 31B; GLM 4.6V Flash · 4.7 Flash · 4.5 Air; Moonlight · Kimi-Linear · Kimi-Dev). Gemma prefers NVFP4 on Dells and 4-bit on Macs, so every study is 4-bit | Reproducible and comparable small → large; MoE is what campus would deploy; 4-bit everywhere keeps Dell vs Mac like-for-like and is what a multi-user server runs | New families or builds (catalog `pin`) |
 
 ## 4. Architecture
 
@@ -76,13 +76,15 @@ CRC funds **$50k of hardware** for **two competing inference clusters**. Both ge
 | Model | Qwen/Qwen3.5-35B-A3B-FP8 @ `9d1823d2dee688a6b25e77009dc727688c44936e` | `serve.sh` `DEFAULT_REVISION` | yes |
 | OpenCode | v2.2.5 (30 Oct 2026), SHA-256 `5a528f42caf576c6cdece6a191eb273d3db54effa5518e0402684d8f8026aeb6` | `clients/install.sh` | yes |
 | Root env | `lm-eval[api]>=0.4.13` (0.4.13 locked), `openpyxl==3.1.5`, `ollama>=0.6.3` | `pyproject.toml` + `uv.lock` | lockfile |
+| NVFP4 quantization (`quantize` group) | llmcompressor 0.15.0 (torch 2.14.1+cu130, transformers 5.21.0, compressed-tensors 0.20.1) | `pyproject.toml` + `uv.lock` | yes |
 | MLX (Macs) | mlx 0.32.4, mlx-lm 0.32.2, CPython 3.12 | `serving/mlx/pyproject.toml` + `uv.lock` | yes |
-| Benchmark protocol / catalog | `aiml-bench/2.0`; 74 builds pinned 2026-11-19 | `bench/harness/protocol.py`, `bench/catalog/models.json` | yes |
+| Benchmark protocol / catalog | `aiml-bench/2.0`; 91 builds pinned (latest 2026-11-20) | `bench/harness/protocol.py`, `bench/catalog/models.json` | yes |
 | huggingface_hub CLI (downloads) | 2.4.0 | `bench/harness/pull_models.py` `HF_HUB_VERSION` | yes |
 | Claude Code plugins | superpowers 7.0.2, mattpocock-skills 1.3.1, frontend-design 1.1.1 | `.claude/settings.json` | marketplace |
 
 Caches:
-- `~/.cache/huggingface/hub`: model weights
+- `models/dell/`, `models/mac/studio/`, `models/mac/mini/` (repo, gitignored): club benchmark weights per machine, Hugging Face cache layout; the harness picks this machine's folder, `bench/download_models.py` fills any of them; `HF_HUB_CACHE` overrides
+- `~/.cache/huggingface/hub`: model weights for `serve.sh`
 - `~/.cache/vllm`: compiled graphs
 - `~/.cache/flashinfer`: JIT kernels
 - `~/.cache/uv`: packages
@@ -99,6 +101,7 @@ Caches:
 | Eval method, results, raw data | [`coding-eval/README.md`](coding-eval/README.md), [`coding-eval/data/`](coding-eval/data/) |
 | Capacity benchmark: method, campus sizing, Python-vs-GPU bottleneck | [`capacity/README.md`](capacity/README.md), [`scripts/README.md`](../scripts/README.md) |
 | Club benchmark (every family, Dells and Macs): protocol, catalog, running a study | [`bench/README.md`](../bench/README.md), [`bench/benchmark-protocol.md`](../bench/benchmark-protocol.md), [`serving/mlx/README.md`](../serving/mlx/README.md) |
+| Download a study's models ahead of time | `uv run bench/download_models.py [family ...] [--machine dell\|studio\|mini]` → `models/dell/`, `models/mac/studio/`, `models/mac/mini/` ([bench/README.md](../bench/README.md)) |
 | Run the eval | `evals/coding/run.sh` (see the header of that script) |
 | Conventions for Claude sessions | [`CLAUDE.md`](../CLAUDE.md) |
 
@@ -140,6 +143,8 @@ During the coding eval, vLLM served ~90% of prompt tokens from its prefix cache 
 | Problem | Cause | Fix |
 |---|---|---|
 | `Python.h: No such file or directory` at vLLM startup | Triton JIT needs headers; system Python has none | uv-managed CPython |
+| transformers `NVFP4Config` can't load its kernel on the GB10 | Hub kernel `kernels-community/nvfp4-gemm` is built for sm_100a/sm_120a only (arch-specific, won't run on sm_121) and is no longer public | `scripts/nvfp4_quantization.py` uses llm-compressor; vLLM runs the FP4 kernels |
+| `Python.h` missing when llm-compressor saves NVFP4 | compressed-tensors packs FP4 with Triton; root env uses system Python | Script sets `CT_ENFORCE_EAGER=1` (PyTorch packing) |
 | `uv sync`: no wheel for `nvidia-cudnn-frontend` | uv picked Python 3.15 | Pinned 3.12 |
 | `"auto" tool choice requires --enable-auto-tool-choice` | Server started without tool calling | 35B default with `TOOL_PARSER=qwen3_coder` |
 | OpenCode ignored `attachment`/`reasoning`/`temperature` | Unsupported legacy keys in v2.2.5 | Removed |

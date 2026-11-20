@@ -57,7 +57,7 @@ class CatalogTest(unittest.TestCase):
         p = catalog.plan_study("qwen", catalog.parse_machine("dell"))
         self.assertEqual(p["build"], "nvfp4")
         self.assertEqual([m["key"] for m in p["models"]],
-                         ["qwen3-8b", "qwen3.6-35b-a3b", "qwen3.5-122b-a10b"])
+                         ["qwen3.5-9b", "qwen3.6-35b-a3b", "qwen3.5-122b-a10b"])
         self.assertTrue(all(m["quantization"] == "nvfp4" for m in p["models"]))
 
     def test_every_assigned_family_has_three_sizes_on_a_dell(self):
@@ -75,25 +75,64 @@ class CatalogTest(unittest.TestCase):
         self.assertEqual(len(mac["models"]), 3)
 
     def test_build_that_holds_all_three_wins_over_a_higher_precision_one(self):
-        # mlx-community has no bf16 Gemma 26B-A4B: 8-bit keeps all three sizes.
-        p = catalog.plan_study("gemma", catalog.parse_machine("mac:128"))
+        # Without a bf16 Gemma 26B-A4B, 8-bit keeps all three sizes on a 128 GB Mac (default
+        # highest-precision rule, so the family's 4-bit preference is removed here).
+        cat = catalog.load()
+        del cat["families"]["gemma"]["preferred_build"]
+        for b in cat["families"]["gemma"]["builds"]["mlx"]:
+            if b["format"] == "bf16":
+                del b["models"]["gemma4-26b-a4b"]
+        p = catalog.plan_study("gemma", catalog.parse_machine("mac:128"), cat)
         self.assertEqual(p["build"], "8bit")
         self.assertEqual(len(p["models"]), 3)
+
+    def test_every_assigned_family_is_4bit_on_the_mac_studio(self):
+        # Like-for-like with the GB10 (NVFP4 / W4A16); Gemma gets there through preferred_build.
+        for fam in ("kimi", "gemma", "qwen", "glm"):
+            p = catalog.plan_study(fam, catalog.parse_machine("studio"))
+            self.assertEqual(p["build"], "4bit", fam)
+            self.assertEqual(len(p["models"]), 3, fam)
+
+    def test_mac_mini_runs_what_fits_in_32_gb(self):
+        kimi = catalog.plan_study("kimi", catalog.parse_machine("mini"))
+        self.assertEqual([m["key"] for m in kimi["models"]], ["moonlight-16b-a3b"])
+        gemma = catalog.plan_study("gemma", catalog.parse_machine("mini"))
+        self.assertEqual((gemma["build"], len(gemma["models"])), ("4bit", 3))
+
+    def test_mac_folder_comes_from_the_model_name(self):
+        self.assertEqual(catalog.mac_models_dir("Mac Studio"), "mac/studio")
+        self.assertEqual(catalog.mac_models_dir("Mac mini"), "mac/mini")
+        self.assertEqual(catalog.mac_models_dir("MacBook Pro"), "mac/macbook-pro")
+        self.assertEqual(catalog.mac_models_dir(""), "mac/unknown")
 
     def test_kimi_passes_trust_remote_code_on_both_engines(self):
         for machine in ("dell", "mac:128"):
             p = catalog.plan_study("kimi", catalog.parse_machine(machine))
             self.assertTrue(all("--trust-remote-code" in m["server_args"] for m in p["models"]))
 
-    def test_dell_gemma_fits_at_bf16(self):
-        self.assertEqual(catalog.plan_study("gemma", catalog.parse_machine("dell"))["build"],
+    def test_moonlight_gets_the_quality_context_on_vllm(self):
+        # Moonlight's config stops at 8,192 tokens; vLLM refuses a longer --max-model-len.
+        p = catalog.plan_study("kimi", catalog.parse_machine("dell"))
+        args = next(m["server_args"] for m in p["models"] if m["key"] == "moonlight-16b-a3b")
+        override = json.loads(args[args.index("--hf-overrides") + 1])
+        self.assertEqual(override["max_position_embeddings"], protocol.QUALITY_CONTEXT)
+
+    def test_dell_gemma_prefers_nvfp4_over_bf16(self):
+        p = catalog.plan_study("gemma", catalog.parse_machine("dell"))
+        self.assertEqual(p["build"], "nvfp4")
+        self.assertEqual([m["key"] for m in p["models"]],
+                         ["gemma4-12b", "gemma4-26b-a4b", "gemma4-31b"])
+        # Without the preference, the highest-precision rule picks BF16 (the 31B fits).
+        cat = catalog.load()
+        del cat["families"]["gemma"]["preferred_build"]
+        self.assertEqual(catalog.plan_study("gemma", catalog.parse_machine("dell"), cat)["build"],
                          "bf16")
 
     def test_small_mac_swaps_in_a_model_that_fits_and_raises_precision(self):
         p = catalog.plan_study("qwen", catalog.parse_machine("mac:64"))
         self.assertEqual(p["build"], "8bit")
         keys = [m["key"] for m in p["models"]]
-        self.assertEqual(keys, ["qwen3-8b", "qwen3.8-27b", "qwen3.6-35b-a3b"])
+        self.assertEqual(keys, ["qwen3.5-9b", "qwen3.8-27b", "qwen3.6-35b-a3b"])
         self.assertEqual([x["key"] for x in p["left_out"]], ["qwen3.5-122b-a10b"])
         self.assertIn("qwen3.8-27b runs in its place", p["left_out"][0]["reason"])
 
@@ -153,6 +192,20 @@ class ProtocolTest(unittest.TestCase):
 
 
 class HfTest(unittest.TestCase):
+    def test_cache_root_is_the_machine_folder_under_models_unless_overridden(self):
+        old = os.environ.pop("HF_HUB_CACHE", None)
+        try:
+            for spec, sub in (("dell", "dell"), ("studio", "mac/studio"), ("mini", "mac/mini")):
+                self.assertEqual(hf.cache_root(catalog.parse_machine(spec)),
+                                 common.REPO / "models" / sub)
+            os.environ["HF_HUB_CACHE"] = "/tmp/elsewhere"
+            self.assertEqual(hf.cache_root(catalog.parse_machine("studio")),
+                             pathlib.Path("/tmp/elsewhere"))
+        finally:
+            os.environ.pop("HF_HUB_CACHE", None)
+            if old is not None:
+                os.environ["HF_HUB_CACHE"] = old
+
     def test_mistral_duplicate_weights_count_once(self):
         info = {"siblings": [
             {"rfilename": "consolidated.safetensors", "lfs": {"sha256": "a", "size": 10}},

@@ -16,6 +16,7 @@ machines. vLLM on the Dell GB10s, MLX on the Macs.
 uv sync                                                # once: harness + lm-eval
 (cd serving/vllm && uv sync)                           # once per Dell  (Mac: serving/mlx)
 export HF_TOKEN=...                                    # gated GPQA dataset, Llama 4 Scout
+uv run bench/download_models.py qwen                   # fetch a study's models ahead of time
 .venv/bin/python bench/harness/preflight.py            # is anyone else on the machine?
 .venv/bin/python bench/harness/catalog.py plan qwen    # what a Qwen study runs here
 .venv/bin/python bench/harness/catalog.py plan qwen --member <you> --write
@@ -29,6 +30,52 @@ bench/status.sh <study_id>
 
 Results: `bench/results/<study_id>/combined/findings.xlsx`.
 
+**Weights** live in the repo's `models/` folder (gitignored), one folder per machine, each a
+Hugging Face cache (`<folder>/models--<org>--<name>/snapshots/<commit>/`) that the harness
+verifies by checksum:
+
+| Folder | Machine | Lineup (`bench/download_models.py`, no family named) |
+|---|---|---|
+| `models/dell/` | Dell GB10 | 12 models, NVFP4 / W4A16, about 343 GB |
+| `models/mac/studio/` | Mac Studio, 128 GB | the same 12 models (GLM 4 9B for GLM 4.6V Flash), MLX 4-bit, about 296 GB |
+| `models/mac/mini/` | Mac mini, 32 GB | the 9 that fit (no large models; Kimi is Moonlight only), MLX 4-bit, about 114 GB |
+
+The harness picks the folder from the machine it runs on (a Mac by its model name: other Macs
+get `models/mac/<model>`). `bench/download_models.py` fills a folder with exactly what the
+benchmark runs there; `--machine studio` (or `mini`, `dell`) fetches another machine's builds
+from wherever you are, and `--dry-run` lists them first. Copy a folder to its machine as is
+(`rsync -a models/mac/studio/ <studio>:<repo>/models/mac/studio/`, with the same catalog commit
+checked out there), or run the script on that machine. Set `HF_HUB_CACHE` to keep the weights
+somewhere else, such as one copy shared between accounts.
+
+## Downloading the models onto a machine (one person per machine)
+
+Same steps on the Dell, the Mac Studio and each Mac mini: the script recognizes the machine and
+fetches that machine's builds into its folder (table above). It needs only `uv`, which brings
+its own Python, and no Hugging Face token for the Qwen, Gemma, GLM and Kimi models.
+
+```sh
+# 0. Once: uv, and the repo at the commit with the current catalog (models are pinned there).
+curl -LsSf https://astral.sh/uv/install.sh | sh
+git clone <repo url> aiml-inference && cd aiml-inference      # or: git pull
+
+# 1. Check: the "machine:" line and the folder must match your machine in the table above,
+#    and the free space must exceed the size it lists.
+uv run bench/download_models.py --dry-run
+
+# 2. Download: takes hours, keeps going if you log out, a re-run resumes. On a Mac, caffeinate
+#    keeps it awake (on the Dell, drop "caffeinate -i").
+nohup caffeinate -i uv run bench/download_models.py > ~/download-models.log 2>&1 &
+tail -f ~/download-models.log
+
+# 3. Done when the log ends with "all N models verified". Re-check any time:
+uv run bench/download_models.py --verify
+```
+
+The second Mac mini can copy the first one's folder instead of downloading it again:
+`rsync -a models/mac/mini/ <mini2>:aiml-inference/models/mac/mini/`, then run step 3 there. If
+step 3 reports MISMATCH, delete that model's `models--<org>--<name>` folder and repeat step 2.
+
 ## Layout
 
 | Path | What |
@@ -37,6 +84,7 @@ Results: `bench/results/<study_id>/combined/findings.xlsx`.
 | `catalog/models.json` | every family's models and their pinned builds per engine |
 | `configs/TEMPLATE.json` | the fixed sections of a study config (configs are written by `catalog.py`) |
 | `prompts/prompts_v1.jsonl` | the three fixed workloads (checksum pinned) |
+| `download_models.py` | fetch the models a study runs on a machine into its `models/` folder |
 | `run_protocol.sh`, `status.sh`, `stop_protocol.sh` | start detached, check, stop |
 | `harness/catalog.py` | list the catalog, plan a study on this machine, pin and verify builds |
 | `harness/run_protocol.py` | level-by-level orchestrator: calibration, modes, stop rule, quality phase, resume |
@@ -56,7 +104,8 @@ Results: `bench/results/<study_id>/combined/findings.xlsx`.
 ## Adding a model (benchmarks lead)
 
 Add the model to its family in `catalog/models.json` (metadata, plus a build per engine and
-format, highest precision first), then `.venv/bin/python bench/harness/catalog.py pin` to fill
+format, highest precision first; a family's `preferred_build` overrides that order, with the
+reason in its notes), then `.venv/bin/python bench/harness/catalog.py pin` to fill
 revision, size, format and gating from the Hub, and `catalog.py plan <family> --machine dell`
 (or `mac:<GiB>`) to see the study it produces. Commit the catalog.
 
