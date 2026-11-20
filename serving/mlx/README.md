@@ -62,5 +62,8 @@ lead:
 
 - macOS lets the GPU wire about 75% of RAM by default (`sysctl iogpu.wired_limit_mb`); the
   catalog plans with that budget. Raising the limit is a deviation; record it in the study notes.
-- Keep the Mac awake during a run: `caffeinate -dims` in another terminal.
+- Sleep: `bench/run_protocol.sh` keeps the Mac awake for the length of a run (`caffeinate -w`).
+  Turn on System Settings → Energy → "Prevent automatic sleeping when the display is off" once,
+  so the Mac also stays reachable between runs. Run Claude Code inside `tmux` on the Mac
+  (`brew install tmux`) if its status loop should survive your SSH session.
 - Power is not recorded on Macs in protocol 2.0 (`powermetrics` needs sudo).

@@ -5,10 +5,10 @@ description: Run a club inference benchmark under the aiml-bench/2.0 protocol (b
 
 # Club benchmark (aiml-bench/2.0)
 
-The member says what they were assigned: a family (`qwen`, `gemma`, `gpt-oss`, `llama`, `muse`,
-`mistral`, `glm`) or one model (catalog key or Hugging Face repo). Everything else comes from
-the catalog and the machine; the member's only decisions are the high-level mode and the time
-cap (step 6). The protocol is `bench/benchmark-protocol.md`: read sections 1, 5 and 10 before
+The member says what they were assigned: a family (`kimi`, `gemma`, `qwen`, `glm`, `gpt-oss`,
+`llama`, `muse`, `mistral`) or one model (catalog key or Hugging Face repo). Everything else
+comes from the catalog and the machine, and the run defaults to `stop` mode with an automatic
+time cap (step 6); the member's only input is their name or netid. The protocol is `bench/benchmark-protocol.md`: read sections 1, 5 and 10 before
 step 1, and look up the rest when a step needs it. Values it marks as fixed stay fixed; when
 something can't follow the protocol, stop and tell the member what and why.
 
@@ -27,7 +27,9 @@ $PY bench/harness/preflight.py
 - `HF_TOKEN` exported (`echo ${HF_TOKEN:+set}`). Without it the gated GPQA task is skipped and
   gated models (Llama 4 Scout) can't download; tell the member, then continue if they agree.
 - Linux: `loginctl show-user $USER -p Linger` and `grep KillUserProcesses /etc/systemd/logind.conf`
-  (protocol section 10). Mac: remind them to run `caffeinate -dims` for the length of the run.
+  (protocol section 10). Mac: `run_protocol.sh` keeps the Mac awake for the run (`caffeinate`);
+  if `pmset -g | grep -w sleep` shows a value other than 0, suggest the one-time setting System
+  Settings → Energy → "Prevent automatic sleeping when the display is off".
 
 Done when preflight says `PASS` and the engine env exists.
 
@@ -70,18 +72,17 @@ from the log with its reason.
 $PY bench/harness/estimate_time.py --config bench/configs/<study_id>.json
 ```
 
-Build one table per mode (`stop`, `all`, `cap:10`): minutes per model and in total, plus about
-0.5 to 1 hour per model for the quality phase (protocol section 7). State it as a range:
-actual time ran 0.73× to 2.05× of the projection on the GB10 reference, least certain at 64 and
-128 users.
+Total for `stop` mode = its high end, plus 1 hour per model for the quality phase (protocol
+section 7). Read projections as a range: actual time ran 0.73× to 2.05× of the projection on the
+GB10 reference, least certain at 64 and 128 users.
 
-## 6. Member chooses
+## 6. Mode and time cap (default, no question)
 
-One AskUserQuestion round:
-- **Mode** for 8 to 128 users: `stop` (recommended), `all`, or `cap:<minutes per level>`, each
-  option with its estimated time.
-- **Total cap** in hours (no new level starts after it). Default: the high end of the chosen
-  mode's range plus the quality phase, rounded up.
+Use `stop` mode with a cap of that total, rounded up to whole hours, and tell the member in one
+line: *about <low>–<high> h, running in stop mode (it ends each workload once the model gets too
+slow); cap <h> h*. Ask one AskUserQuestion round instead only when the total is over 4 hours or
+the member asked for complete curves: `stop` (recommended), `all`, or `cap:<minutes per
+level>`, each with its estimated time, and the cap in hours.
 
 For a run longer than an hour, remind them to book the machine in the club channel.
 

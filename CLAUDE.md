@@ -7,7 +7,7 @@ Notre Dame CRC is funding $50k of hardware for two competing on-prem LLM inferen
 
 ## Environment
 - Nodes: Dell Pro GB10 (Grace ARM64 CPU + Blackwell GPU, ~128 GB unified memory). Assume **aarch64**: check that wheels and containers have arm64/sbsa builds.
-- Python ≥ 3.12 managed with **uv** (`uv run <script>`). Root env deps: `lm-eval[api]`, `openpyxl`, `ollama` (examples only). vLLM and MLX have their own envs (see Layout).
+- Python ≥ 3.12 managed with **uv** (`uv run <script>`). Root env deps: `lm-eval[api,ifeval]`, `openpyxl`, `ollama` (examples only); torch/transformers only in the optional `quantize` group (`uv run --group quantize scripts/nvfp4_quantization.py`). vLLM and MLX have their own envs (see Layout).
 - Serving engines: **vLLM 0.33** is the campus server (`serving/vllm/serve.sh`: Qwen3.5-35B-A3B-FP8 pinned to a tested revision, tool calling, 128k context). The club benchmark (`bench/`, protocol `aiml-bench/2.0`) runs vLLM on the Dells and MLX on the Macs; Ollama is legacy (`bench/legacy/`).
 
 ## Layout
