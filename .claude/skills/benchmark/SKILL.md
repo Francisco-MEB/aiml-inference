@@ -6,7 +6,7 @@ description: Run a club inference benchmark under the aiml-bench/2.0 protocol (b
 # Club benchmark (aiml-bench/2.0)
 
 The member says what they were assigned: a family (`qwen`, `gemma`, `gpt-oss`, `llama`, `muse`,
-`mistral`, `glm`) or one model (catalog key or Hugging Face repo). Everything else comes from
+`mistral`, `glm`, `kimi`) or one model (catalog key or Hugging Face repo). Everything else comes from
 the catalog and the machine; the member's only decisions are the high-level mode and the time
 cap (step 6). The protocol is `bench/benchmark-protocol.md`: read sections 1, 5 and 10 before
 step 1, and look up the rest when a step needs it. Values it marks as fixed stay fixed; when
